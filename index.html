@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project - Firebase Multi-Page App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .auth-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .auth-title {
+            text-align: center;
+            color: #1f2937;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: #f3f4f6;
+            padding: 0.25rem;
+            border-radius: 8px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .auth-tab.active {
+            background: white;
+            color: #10b981;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-tab:hover:not(.active) {
+            color: #374151;
+        }
+
+        .auth-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .auth-btn {
+            width: 100%;
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 1rem;
+        }
+
+        .auth-btn:hover:not(:disabled) {
+            background: #059669;
+        }
+
+        .auth-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .google-btn {
+            background: #4285f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .google-btn:hover:not(:disabled) {
+            background: #3367d6;
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #6b7280;
+        }
+
+        .auth-switch button {
+            background: none;
+            border: none;
+            color: #10b981;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .auth-switch button:hover {
+            color: #059669;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            border: 1px solid #fecaca;
+        }
+
+        .success-message {
+            background: #ecfdf5;
+            color: #059669;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            border: 1px solid #d1fae5;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            color: white;
+            font-size: 0.9rem;
+            margin-right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-links a.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .add-btn:hover {
+            background: #059669;
+        }
+
+        .add-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            max-width: 300px;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .status-select {
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .clear-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .clear-btn:hover {
+            background: #059669;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            color: #6b7280;
+        }
+
+        .data-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+            min-width: 100px;
+        }
+
+        .status-active {
+            background: #ecfdf5;
+            color: #10b981;
+            border: 1px solid #d1fae5;
+        }
+
+        .status-yuborilmogda {
+            background: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+
+        .status-tasdiqlanmogda {
+            background: #dbeafe;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+        }
+
+        .status-qaytarildi {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .status-tugallandi {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        .action-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #059669;
+        }
+
+        .delete-btn {
+            background: #ef4444;
+            margin-left: 0.5rem;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+            padding: 3rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .loading {
+            text-align: center;
+            color: #3b82f6;
+            font-style: italic;
+            padding: 3rem;
+            background: #eff6ff;
+            border-radius: 8px;
+            border: 1px solid #dbeafe;
+        }
+
+        .form-container {
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 2px solid #e5e7eb;
+        }
+
+        .form-title {
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #4b5563;
+        }
+
+        .search-results-count {
+            color: #10b981;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background: #ecfdf5;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid #d1fae5;
+        }
+
+        .welcome-message {
+            background: #ecfdf5;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #d1fae5;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sliding-sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100%;
+            background: white;
+            z-index: 999;
+            transition: right 0.3s ease;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .sliding-sidebar.active {
+            right: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f8fafc;
+        }
+
+        .sidebar-header h3 {
+            color: #1f2937;
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .sidebar-close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .sidebar-close-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .sidebar-body {
+            padding: 1.5rem;
+        }
+
+        .sidebar-body .sidebar-card {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-body .sidebar-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .sidebar-body .sidebar-card h3 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-body .sidebar-card p {
+            color: #6b7280;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-body .sidebar-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Accordion Styles for Help Page */
+        .accordion-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .accordion-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .accordion-header {
+            background: #f8fafc;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+            border: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .accordion-header:hover {
+            background: #f1f5f9;
+        }
+
+        .accordion-header.active {
+            background: #fef3c7;
+        }
+
+        .accordion-title {
+            color: #374151;
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .accordion-icon {
+            color: #6b7280;
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .accordion-content.active {
+            max-height: 500px;
+        }
+
+        .accordion-body {
+            padding: 1.5rem;
+            background: white;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .accordion-body h4 {
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .accordion-body ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .accordion-body li {
+            margin-bottom: 0.3rem;
+        }
+
+        @media (max-width: 768px) {
+            .sliding-sidebar {
+                width: 320px;
+                right: -320px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Authentication sahifasi -->
+        <div v-if="!isLoggedIn" class="auth-container">
+            <div class="auth-card">
+                <h2 class="auth-title">Kirish</h2>
+                
+                <!-- Auth Tabs -->
+                <div class="auth-tabs">
+                    <button 
+                        class="auth-tab" 
+                        :class="{active: authMode === 'email'}"
+                        @click="setAuthMode('email')"
+                    >
+                        📧 Email/Password
+                    </button>
+                    <button 
+                        class="auth-tab" 
+                        :class="{active: authMode === 'google'}"
+                        @click="setAuthMode('google')"
+                    >
+                        🔍 Google
+                    </button>
+                </div>
+
+                <!-- Error/Success Messages -->
+                <div v-if="authError" class="error-message">
+                    {{ authError }}
+                </div>
+                <div v-if="authSuccess" class="success-message">
+                    {{ authSuccess }}
+                </div>
+
+                <!-- Email/Password Form -->
+                <div v-if="authMode === 'email'">
+                    <form @submit.prevent="isLoginMode ? loginWithEmail() : registerWithEmail()" class="auth-form">
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                v-model="authData.email" 
+                                required
+                                placeholder="Email manzilingizni kiriting"
+                                :disabled="isAuthenticating"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Parol:</label>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                v-model="authData.password" 
+                                required
+                                placeholder="Parolingizni kiriting"
+                                :disabled="isAuthenticating"
+                                minlength="6"
+                            >
+                        </div>
+                        <button type="submit" class="auth-btn" :disabled="isAuthenticating">
+                            {{ isAuthenticating ? 'Kutilmoqda...' : (isLoginMode ? 'KIRISH' : 'RO\'YXATDAN O\'TISH') }}
+                        </button>
+                    </form>
+                    
+                    <div class="auth-switch">
+                        <span v-if="isLoginMode">
+                            Hisobingiz yo'qmi? 
+                            <button @click="toggleLoginMode">Ro'yxatdan o'ting</button>
+                        </span>
+                        <span v-else>
+                            Hisobingiz bormi? 
+                            <button @click="toggleLoginMode">Kirish</button>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Google Authentication -->
+                <div v-if="authMode === 'google'">
+                    <button @click="loginWithGoogle" class="auth-btn google-btn" :disabled="isAuthenticating">
+                        <div class="google-icon">G</div>
+                        {{ isAuthenticating ? 'Kutilmoqda...' : 'GOOGLE ORQALI KIRISH' }}
+                    </button>
+                    
+                    <div class="divider">
+                        <span>yoki</span>
+                    </div>
+                    
+                    <button @click="setAuthMode('email')" class="auth-btn" style="background: #6b7280;">
+                        Email/Password bilan kirish
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asosiy sahifa -->
+        <div v-if="isLoggedIn">
+            <header class="header">
+                <h1>Project</h1>
+                <nav>
+                    <ul class="nav-links">
+                        <li class="user-info">
+                            <div class="user-avatar" v-if="currentUser.photoURL">
+                                <img :src="currentUser.photoURL" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%;">
+                            </div>
+                            <div class="user-avatar" v-else>
+                                {{ getUserInitials() }}
+                            </div>
+                            <span>Salom, {{ getUserDisplayName() }}!</span>
+                        </li>
+                        <li><a href="#" @click="setActivePage('home')" :class="{active: currentPage === 'home'}">Bosh sahifa</a></li>
+                        <li><a href="#" @click="setActivePage('help')" :class="{active: currentPage === 'help'}">Yordam</a></li>
+                        <li><a href="#" @click="toggleSidebar" :class="{active: sidebarOpen}">Sidebar</a></li>
+                        <li><a href="#" @click="logout">Chiqish</a></li>
+                    </ul>
+                </nav>
+            </header>
+
+            <!-- Sliding Sidebar -->
+            <div class="sidebar-overlay" :class="{active: sidebarOpen}" @click="closeSidebar"></div>
+            <div class="sliding-sidebar" :class="{active: sidebarOpen}">
+                <div class="sidebar-header">
+                    <h3>Sidebar</h3>
+                    <button class="sidebar-close-btn" @click="closeSidebar">&times;</button>
+                </div>
+                <div class="sidebar-body">
+                    <div class="sidebar-card">
+                        <h3>Foydalanuvchi ma'lumotlari</h3>
+                        <p><strong>Ism:</strong> {{ getUserDisplayName() }}</p>
+                        <p><strong>Email:</strong> {{ currentUser.email }}</p>
+                        <p><strong>Kirish vaqti:</strong> {{ formatDate(currentUser.loginTime) }}</p>
+                        <p><strong>Provider:</strong> {{ getAuthProvider() }}</p>
+                    </div>
+                    
+                    <div class="sidebar-card">
+                        <h3>Tizim statistikasi</h3>
+                        <p><strong>Jami ma'lumotlar:</strong> {{ requests.length }} ta</p>
+                        <p><strong>Faol ma'lumotlar:</strong> {{ getStatusCount('active') }} ta</p>
+                        <p><strong>Yuborilayotgan:</strong> {{ getStatusCount('yuborilmogda') }} ta</p>
+                        <p><strong>Tasdiqlashda:</strong> {{ getStatusCount('tasdiqlanmogda') }} ta</p>
+                    </div>
+                    
+                    <div class="sidebar-card">
+                        <h3>Tezkor havolalar</h3>
+                        <p><a href="#" @click="setActivePage('home'); closeSidebar()" style="color: #10b981;">Bosh sahifaga o'tish</a></p>
+                        <p><a href="#" @click="setActivePage('help'); closeSidebar()" style="color: #10b981;">Yordamga o'tish</a></p>
+                        <p><a href="#" @click="clearAllData(); closeSidebar()" style="color: #ef4444;">Barcha ma'lumotlarni tozalash</a></p>
+                    </div>
+                    
+                    <div class="sidebar-card">
+                        <h3>Firebase ma'lumotlari</h3>
+                        <p><strong>Holat:</strong> {{ firebaseReady ? 'Ulangan' : 'Ulanmagan' }}</p>
+                        <p><strong>Database:</strong> Realtime Database</p>
+                        <p><strong>Authentication:</strong> Firebase Auth</p>
+                        <p><strong>So'nggi yangilanish:</strong> {{ formatDate(new Date()) }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container">
+                <div class="main-card">
+                    <!-- Bosh sahifa -->
+                    <div v-if="currentPage === 'home'">
+                        <div class="welcome-message">
+                            Xush kelibsiz, {{ getUserDisplayName() }}! Siz {{ formatDate(currentUser.loginTime) }} da tizimga kirdingiz.
+                        </div>
+                        
+                        <div class="page-title">
+                            <h2>Bosh sahifa</h2>
+                            <button class="add-btn" @click="toggleForm" :disabled="!firebaseReady">
+                                {{ showForm ? 'FORMANI YOPISH' : "MA'LUMOT QO'SHISH" }}
+                            </button>
+                        </div>
+
+                        <!-- Search Controls -->
+                        <div class="search-controls">
+                            <input 
+                                type="text" 
+                                class="search-input" 
+                                placeholder="FIO ni kiriting..."
+                                v-model="searchQuery"
+                                @input="performSearch"
+                            >
+                            <select class="status-select" v-model="statusFilter" @change="performSearch">
+                                <option value="">Barcha statuslar</option>
+                                <option value="active">Faol</option>
+                                <option value="yuborilmogda">Yuborilmogda</option>
+                                <option value="tasdiqlanmogda">Tasdiqlanmogda</option>
+                                <option value="qaytarildi">Qaytarildi</option>
+                                <option value="tugallandi">Tugallandi</option>
+                            </select>
+                            <button class="clear-btn" @click="clearSearch">TOZALASH</button>
+                        </div>
+
+                        <!-- Form -->
+                        <div v-if="showForm && firebaseReady" class="form-container">
+                            <h3 class="form-title">Yangi ma'lumot qo'shish</h3>
+                            <form @submit.prevent="addData">
+                                <div class="form-group">
+                                    <label for="fio">F.I.O:</label>
+                                    <input 
+                                        type="text" 
+                                        id="fio" 
+                                        v-model="formData.fio" 
+                                        required
+                                        placeholder="To'liq ismingizni kiriting"
+                                        :disabled="isSubmitting"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">Telefon:</label>
+                                    <input 
+                                        type="tel" 
+                                        id="phone" 
+                                        v-model="formData.phone" 
+                                        required
+                                        placeholder="+998 90 123 45 67"
+                                        :disabled="isSubmitting"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="summa">Summa:</label>
+                                    <input 
+                                        type="number" 
+                                        id="summa" 
+                                        v-model="formData.summa" 
+                                        required
+                                        placeholder="Summani kiriting"
+                                        min="1"
+                                        :disabled="isSubmitting"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label for="status">Status:</label>
+                                    <select id="status" v-model="formData.status" required :disabled="isSubmitting">
+                                        <option value="active">Faol</option>
+                                        <option value="yuborilmogda">Yuborilmogda</option>
+                                        <option value="tasdiqlanmogda">Tasdiqlanmogda</option>
+                                        <option value="qaytarildi">Qaytarildi</option>
+                                        <option value="tugallandi">Tugallandi</option>
+                                    </select>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                                        {{ isSubmitting ? 'Saqlanmoqda...' : 'Saqlash' }}
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" @click="resetForm" :disabled="isSubmitting">
+                                        Tozalash
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Search Results Count -->
+                        <div v-if="filteredRequests.length > 0 && (searchQuery || statusFilter)" class="search-results-count">
+                            {{ filteredRequests.length }} ta natija topildi
+                        </div>
+
+                        <!-- Data Table -->
+                        <div v-if="loading" class="loading">
+                            Ma'lumotlar yuklanmoqda...
+                        </div>
+                        
+                        <div v-else-if="!firebaseReady" class="no-data">
+                            Firebase bilan bog'lanish kutilmoqda...
+                        </div>
+                        
+                        <div v-else-if="filteredRequests.length === 0" class="no-data">
+                            {{ searchQuery || statusFilter ? 'Qidiruv bo\'yicha natija topilmadi' : 'Bazada ma\'lumot yo\'q' }}
+                        </div>
+                        
+                        <div v-else>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>№</th>
+                                        <th>FIO</th>
+                                        <th>Tel</th>
+                                        <th>Summa</th>
+                                        <th>Status</th>
+                                        <th>Amallar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(request, index) in filteredRequests" :key="request.id">
+                                        <td>{{ index + 1 }}</td>
+                                        <td><strong>{{ request.fio }}</strong></td>
+                                        <td>{{ request.phone }}</td>
+                                        <td><strong>UZS {{ formatNumber(request.summa) }}</strong></td>
+                                        <td>
+                                            <span :class="getStatusClass(request.status)">
+                                                {{ getStatusText(request.status) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button class="action-btn" @click="viewDetails(request)">
+                                                OCHISH
+                                            </button>
+                                            <button class="action-btn delete-btn" @click="deleteData(request.id)" :disabled="isDeleting">
+                                                O'CHIRISH
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Yordam sahifasi -->
+                    <div v-if="currentPage === 'help'">
+                        <div class="page-title">
+                            <h2>Yordam</h2>
+                        </div>
+                        
+                        <div class="accordion-item" v-for="(item, index) in helpItems" :key="index">
+                            <button 
+                                class="accordion-header" 
+                                :class="{active: activeAccordion === index}"
+                                @click="toggleAccordion(index)"
+                            >
+                                <h3 class="accordion-title">{{ item.title }}</h3>
+                                <span class="accordion-icon">▼</span>
+                            </button>
+                            <div class="accordion-content" :class="{active: activeAccordion === index}">
+                                <div class="accordion-body" v-html="item.content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, push, onValue, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signInWithPopup, 
+            GoogleAuthProvider, 
+            signOut,
+            onAuthStateChanged
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBv_jGPJeElF-EakNV7BY5hFANKdBkdAtA",
+            authDomain: "vuejsdars.firebaseapp.com",
+            databaseURL: "https://vuejsdars-default-rtdb.firebaseio.com",
+            projectId: "vuejsdars",
+            storageBucket: "vuejsdars.firebasestorage.app",
+            messagingSenderId: "85172837101",
+            appId: "1:85172837101:web:70ad5fffef81b3606f8ae4",
+            measurementId: "G-8F902F5W6W"
+        };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const database = getDatabase(app);
+            const auth = getAuth(app);
+            const googleProvider = new GoogleAuthProvider();
+            
+            window.firebaseApp = app;
+            window.database = database;
+            window.auth = auth;
+            window.googleProvider = googleProvider;
+            window.dbRef = ref;
+            window.dbPush = push;
+            window.dbOnValue = onValue;
+            window.dbRemove = remove;
+            window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+            window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+            window.signInWithPopup = signInWithPopup;
+            window.signOut = signOut;
+            window.onAuthStateChanged = onAuthStateChanged;
+            window.firebaseReady = true;
+            
+            console.log('Firebase muvaffaqiyatli ulandi!');
+            initVueApp();
+            
+        } catch (error) {
+            console.error('Firebase ulanishida xatolik:', error);
+            window.firebaseReady = false;
+            initVueApp();
+        }
+
+        function initVueApp() {
+            const { createApp } = Vue;
+
+            createApp({
+                data() {
+                    return {
+                        // Authentication holati
+                        isLoggedIn: false,
+                        isAuthenticating: false,
+                        currentUser: null,
+                        authMode: 'email', // 'email' or 'google'
+                        isLoginMode: true, // true for login, false for register
+                        authData: {
+                            email: '',
+                            password: ''
+                        },
+                        authError: '',
+                        authSuccess: '',
+                        
+                        // Sahifa holati
+                        currentPage: 'home',
+                        showForm: false,
+                        sidebarOpen: false,
+                        activeAccordion: null,
+                        
+                        // Ma'lumotlar
+                        requests: [],
+                        filteredRequests: [],
+                        formData: {
+                            fio: '',
+                            phone: '',
+                            summa: '',
+                            status: 'active'
+                        },
+                        
+                        // Holatlar
+                        loading: true,
+                        isSubmitting: false,
+                        isDeleting: false,
+                        firebaseReady: window.firebaseReady || false,
+                        
+                        // Qidiruv
+                        searchQuery: '',
+                        statusFilter: '',
+                        
+                        // Help Items
+                        helpItems: [
+                            {
+                                title: "Tizimdan qanday foydalanish kerak?",
+                                content: `
+                                    <p>Bu tizim orqali siz quyidagi ishlarni bajarishingiz mumkin:</p>
+                                    <ul>
+                                        <li>Email/Password yoki Google orqali kirish</li>
+                                        <li>Ma'lumot qo'shish va boshqarish</li>
+                                        <li>Qidiruv va filtrlash</li>
+                                        <li>Status o'zgartirish</li>
+                                        <li>Ma'lumotlarni ko'rish va o'chirish</li>
+                                    </ul>
+                                `
+                            },
+                            {
+                                title: "Autentifikatsiya",
+                                content: `
+                                    <h4>Tizimga kirish usullari:</h4>
+                                    <ul>
+                                        <li><strong>Email/Password:</strong> Email va parol bilan ro'yxatdan o'ting yoki kiring</li>
+                                        <li><strong>Google:</strong> Google hisobingiz orqali bir bosishda kiring</li>
+                                        <li>Parol kamida 6 ta belgidan iborat bo'lishi kerak</li>
+                                        <li>Xavfsizlik uchun kuchli parol ishlating</li>
+                                    </ul>
+                                `
+                            },
+                            {
+                                title: "Ma'lumot qo'shish",
+                                content: `
+                                    <h4>Yangi ma'lumot qo'shish uchun:</h4>
+                                    <ul>
+                                        <li>"MA'LUMOT QO'SHISH" tugmasini bosing</li>
+                                        <li>FIO, telefon, summa va statusni kiriting</li>
+                                        <li>"Saqlash" tugmasini bosing</li>
+                                        <li>Ma'lumot Firebase bazasiga saqlanadi</li>
+                                    </ul>
+                                    <p><strong>Eslatma:</strong> Barcha maydonlar to'ldirilishi shart!</p>
+                                `
+                            },
+                            {
+                                title: "Qidiruv va filtrlash",
+                                content: `
+                                    <h4>Qidiruv imkoniyatlari:</h4>
+                                    <ul>
+                                        <li>FIO bo'yicha qidiruv uchun "FIO ni kiriting" maydoniga yozing</li>
+                                        <li>Status bo'yicha filtrlash uchun dropdown menyu ishlatiladi</li>
+                                        <li>"TOZALASH" tugmasi barcha filtrlarni tozalaydi</li>
+                                        <li>Real-time qidiruv - yozgan sayin natija ko'rsatiladi</li>
+                                    </ul>
+                                `
+                            },
+                            {
+                                title: "Status turlari",
+                                content: `
+                                    <h4>Mavjud statuslar:</h4>
+                                    <ul>
+                                        <li><strong>Faol</strong> - faol holatdagi ma'lumotlar</li>
+                                        <li><strong>Yuborilmogda</strong> - yuborilayotgan ma'lumotlar</li>
+                                        <li><strong>Tasdiqlanmogda</strong> - tasdiqlash kutilayotgan ma'lumotlar</li>
+                                        <li><strong>Qaytarildi</strong> - qaytarilgan ma'lumotlar</li>
+                                        <li><strong>Tugallandi</strong> - tugallangan ma'lumotlar</li>
+                                    </ul>
+                                    <p>Har bir status o'z rangiga ega va jadvalda ko'rsatiladi.</p>
+                                `
+                            }
+                        ]
+                    }
+                },
+                mounted() {
+                    this.initAuth();
+                },
+                methods: {
+                    initAuth() {
+                        if (!this.firebaseReady) {
+                            this.loading = false;
+                            return;
+                        }
+
+                        // Auth state listener
+                        window.onAuthStateChanged(window.auth, (user) => {
+                            if (user) {
+                                console.log('=== FOYDALANUVCHI TIZIMGA KIRDI ===');
+                                console.log('UID:', user.uid);
+                                console.log('Email:', user.email);
+                                console.log('Display Name:', user.displayName);
+                                console.log('Provider:', user.providerData[0]?.providerId);
+                                
+                                this.currentUser = {
+                                    uid: user.uid,
+                                    email: user.email,
+                                    displayName: user.displayName,
+                                    photoURL: user.photoURL,
+                                    provider: user.providerData[0]?.providerId,
+                                    loginTime: new Date().toISOString()
+                                };
+                                
+                                this.isLoggedIn = true;
+                                this.loadData();
+                                this.clearAuthMessages();
+                            } else {
+                                console.log('=== FOYDALANUVCHI TIZIMDAN CHIQDI ===');
+                                this.currentUser = null;
+                                this.isLoggedIn = false;
+                                this.requests = [];
+                                this.filteredRequests = [];
+                            }
+                            this.loading = false;
+                        });
+                    },
+
+                    setAuthMode(mode) {
+                        this.authMode = mode;
+                        this.clearAuthMessages();
+                    },
+
+                    toggleLoginMode() {
+                        this.isLoginMode = !this.isLoginMode;
+                        this.clearAuthMessages();
+                    },
+
+                    clearAuthMessages() {
+                        this.authError = '';
+                        this.authSuccess = '';
+                    },
+
+                    async registerWithEmail() {
+                        if (this.isAuthenticating) return;
+                        
+                        this.isAuthenticating = true;
+                        this.clearAuthMessages();
+                        
+                        try {
+                            const userCredential = await window.createUserWithEmailAndPassword(
+                                window.auth, 
+                                this.authData.email, 
+                                this.authData.password
+                            );
+                            
+                            console.log('Ro\'yxatdan o\'tish muvaffaqiyatli:', userCredential.user.email);
+                            this.authSuccess = 'Ro\'yxatdan o\'tish muvaffaqiyatli!';
+                            this.authData.email = '';
+                            this.authData.password = '';
+                            
+                        } catch (error) {
+                            console.error('Ro\'yxatdan o\'tishda xatolik:', error);
+                            this.authError = this.getAuthErrorMessage(error.code);
+                        } finally {
+                            this.isAuthenticating = false;
+                        }
+                    },
+
+                    async loginWithEmail() {
+                        if (this.isAuthenticating) return;
+                        
+                        this.isAuthenticating = true;
+                        this.clearAuthMessages();
+                        
+                        try {
+                            const userCredential = await window.signInWithEmailAndPassword(
+                                window.auth, 
+                                this.authData.email, 
+                                this.authData.password
+                            );
+                            
+                            console.log('Email bilan kirish muvaffaqiyatli:', userCredential.user.email);
+                            this.authData.email = '';
+                            this.authData.password = '';
+                            
+                        } catch (error) {
+                            console.error('Email bilan kirishda xatolik:', error);
+                            this.authError = this.getAuthErrorMessage(error.code);
+                        } finally {
+                            this.isAuthenticating = false;
+                        }
+                    },
+
+                    async loginWithGoogle() {
+                        if (this.isAuthenticating) return;
+                        
+                        this.isAuthenticating = true;
+                        this.clearAuthMessages();
+                        
+                        try {
+                            const result = await window.signInWithPopup(window.auth, window.googleProvider);
+                            console.log('Google bilan kirish muvaffaqiyatli:', result.user.email);
+                            
+                        } catch (error) {
+                            console.error('Google bilan kirishda xatolik:', error);
+                            this.authError = this.getAuthErrorMessage(error.code);
+                        } finally {
+                            this.isAuthenticating = false;
+                        }
+                    },
+
+                    async logout() {
+                        if (confirm('Haqiqatan ham tizimdan chiqmoqchimisiz?')) {
+                            try {
+                                await window.signOut(window.auth);
+                                console.log('Tizimdan chiqish muvaffaqiyatli');
+                                
+                                // Ma'lumotlarni tozalash
+                                this.currentPage = 'home';
+                                this.showForm = false;
+                                this.searchQuery = '';
+                                this.statusFilter = '';
+                                this.sidebarOpen = false;
+                                
+                            } catch (error) {
+                                console.error('Chiqishda xatolik:', error);
+                                alert('Chiqishda xatolik yuz berdi');
+                            }
+                        }
+                    },
+
+                    getAuthErrorMessage(errorCode) {
+                        const errorMessages = {
+                            'auth/user-not-found': 'Bunday foydalanuvchi topilmadi',
+                            'auth/wrong-password': 'Noto\'g\'ri parol',
+                            'auth/email-already-in-use': 'Bu email allaqachon ishlatilmoqda',
+                            'auth/weak-password': 'Parol juda zaif (kamida 6 ta belgi)',
+                            'auth/invalid-email': 'Noto\'g\'ri email format',
+                            'auth/too-many-requests': 'Juda ko\'p urinish. Keyinroq qayta urinib ko\'ring',
+                            'auth/popup-closed-by-user': 'Google kirish oynasi yopildi',
+                            'auth/cancelled-popup-request': 'Google kirish bekor qilindi'
+                        };
+                        return errorMessages[errorCode] || 'Noma\'lum xatolik yuz berdi';
+                    },
+
+                    getUserDisplayName() {
+                        if (!this.currentUser) return 'Foydalanuvchi';
+                        return this.currentUser.displayName || 
+                               this.currentUser.email?.split('@')[0] || 
+                               'Foydalanuvchi';
+                    },
+
+                    getUserInitials() {
+                        const name = this.getUserDisplayName();
+                        return name.charAt(0).toUpperCase();
+                    },
+
+                    getAuthProvider() {
+                        if (!this.currentUser) return 'Noma\'lum';
+                        const provider = this.currentUser.provider;
+                        if (provider === 'google.com') return 'Google';
+                        if (provider === 'password') return 'Email/Password';
+                        return provider || 'Email/Password';
+                    },
+
+                    loadData() {
+                        if (!this.firebaseReady) return;
+
+                        console.log('Ma\'lumotlarni Firebase\'dan yuklash...');
+                        
+                        try {
+                            const requestsRef = window.dbRef(window.database, 'requests');
+                            
+                            window.dbOnValue(requestsRef, (snapshot) => {
+                                const data = snapshot.val();
+                                console.log('Firebase\'dan kelgan ma\'lumot:', data);
+                                
+                                if (data && Object.keys(data).length > 0) {
+                                    this.requests = Object.keys(data).map(key => ({
+                                        id: key,
+                                        ...data[key]
+                                    }));
+                                    
+                                    console.log('=== FIREBASE\'DA MAVJUD MA\'LUMOTLAR ===');
+                                    this.requests.forEach((request, index) => {
+                                        console.log(`${index + 1}.`, {
+                                            status: request.status,
+                                            fio: request.fio,
+                                            phone: request.phone,
+                                            summa: request.summa
+                                        });
+                                    });
+                                    console.log(`Jami: ${this.requests.length} ta ma'lumot`);
+                                } else {
+                                    this.requests = [];
+                                    console.log('=== FIREBASE\'DA MA\'LUMOT YO\'Q ===');
+                                    console.log('Bazada ma\'lumot yo\'q');
+                                }
+                                
+                                this.performSearch();
+                                this.loading = false;
+                            }, (error) => {
+                                console.error('Firebase\'dan ma\'lumot olishda xatolik:', error);
+                                this.loading = false;
+                            });
+                        } catch (error) {
+                            console.error('loadData funksiyasida xatolik:', error);
+                            this.loading = false;
+                        }
+                    },
+
+                    performSearch() {
+                        let filtered = [...this.requests];
+                        
+                        if (this.searchQuery.trim()) {
+                            const query = this.searchQuery.toLowerCase().trim();
+                            filtered = filtered.filter(request => 
+                                request.fio.toLowerCase().includes(query)
+                            );
+                            console.log(`"${this.searchQuery}" bo'yicha qidiruv natijasi:`, filtered.length, 'ta');
+                        }
+                        
+                        if (this.statusFilter) {
+                            filtered = filtered.filter(request => 
+                                request.status === this.statusFilter
+                            );
+                            console.log(`"${this.statusFilter}" status bo'yicha filtrlash:`, filtered.length, 'ta');
+                        }
+                        
+                        this.filteredRequests = filtered;
+                        
+                        if (filtered.length > 0) {
+                            console.log('=== QIDIRUV NATIJALARI ===');
+                            filtered.forEach((request, index) => {
+                                console.log(`${index + 1}.`, {
+                                    status: request.status,
+                                    fio: request.fio,
+                                    phone: request.phone,
+                                    summa: request.summa
+                                });
+                            });
+                        } else if (this.searchQuery || this.statusFilter) {
+                            console.log('=== QIDIRUV BO\'YICHA NATIJA TOPILMADI ===');
+                        }
+                    },
+
+                    clearSearch() {
+                        this.searchQuery = '';
+                        this.statusFilter = '';
+                        this.performSearch();
+                        console.log('Qidiruv tozalandi');
+                    },
+
+                    async addData() {
+                        if (!this.firebaseReady || this.isSubmitting) return;
+                        
+                        this.isSubmitting = true;
+                        console.log('Yangi ma\'lumot qo\'shish boshlandi...');
+                        
+                        try {
+                            const requestsRef = window.dbRef(window.database, 'requests');
+                            const newRequest = {
+                                fio: this.formData.fio.trim(),
+                                phone: this.formData.phone.trim(),
+                                summa: parseInt(this.formData.summa),
+                                status: this.formData.status,
+                                createdBy: this.getUserDisplayName(),
+                                createdByEmail: this.currentUser.email,
+                                createdAt: new Date().toISOString()
+                            };
+
+                            console.log('Firebase\'ga yuboriladigan ma\'lumot:', newRequest);
+                            await window.dbPush(requestsRef, newRequest);
+                            
+                            console.log('=== YANGI MA\'LUMOT QO\'SHILDI ===');
+                            console.log({
+                                status: newRequest.status,
+                                fio: newRequest.fio,
+                                phone: newRequest.phone,
+                                summa: newRequest.summa
+                            });
+                            
+                            alert('Ma\'lumot muvaffaqiyatli saqlandi!');
+                            this.resetForm();
+                            this.showForm = false;
+                            
+                        } catch (error) {
+                            console.error('Ma\'lumot saqlashda xatolik:', error);
+                            alert('Ma\'lumot saqlashda xatolik yuz berdi');
+                        } finally {
+                            this.isSubmitting = false;
+                        }
+                    },
+
+                    async deleteData(id) {
+                        if (!this.firebaseReady || this.isDeleting) return;
+                        
+                        if (confirm('Bu ma\'lumotni o\'chirmoqchimisiz?')) {
+                            this.isDeleting = true;
+                            
+                            try {
+                                const itemRef = window.dbRef(window.database, `requests/${id}`);
+                                await window.dbRemove(itemRef);
+                                console.log('Ma\'lumot o\'chirildi:', id);
+                                alert('Ma\'lumot o\'chirildi');
+                            } catch (error) {
+                                console.error('Ma\'lumot o\'chirishda xatolik:', error);
+                                alert('O\'chirishda xatolik yuz berdi');
+                            } finally {
+                                this.isDeleting = false;
+                            }
+                        }
+                    },
+
+                    async clearAllData() {
+                        if (confirm('Barcha ma\'lumotlarni o\'chirmoqchimisiz? Bu amalni bekor qilish mumkin emas!')) {
+                            try {
+                                const requestsRef = window.dbRef(window.database, 'requests');
+                                await window.dbRemove(requestsRef);
+                                console.log('Barcha ma\'lumotlar o\'chirildi');
+                                alert('Barcha ma\'lumotlar o\'chirildi');
+                            } catch (error) {
+                                console.error('Ma\'lumotlarni o\'chirishda xatolik:', error);
+                                alert('O\'chirishda xatolik yuz berdi');
+                            }
+                        }
+                    },
+
+                    viewDetails(request) {
+                        console.log('Ma\'lumot tafsilotlari:', request);
+                        alert(`Ma'lumot tafsilotlari:\n\nFIO: ${request.fio}\nTelefon: ${request.phone}\nSumma: ${this.formatNumber(request.summa)} so'm\nStatus: ${this.getStatusText(request.status)}\nQo'shgan: ${request.createdBy || 'Noma\'lum'}\nEmail: ${request.createdByEmail || 'Noma\'lum'}\nQo'shilgan: ${this.formatDate(request.createdAt)}`);
+                    },
+
+                    toggleForm() {
+                        if (!this.firebaseReady) return;
+                        this.showForm = !this.showForm;
+                        if (this.showForm) {
+                            this.resetForm();
+                        }
+                    },
+
+                    resetForm() {
+                        this.formData = {
+                            fio: '',
+                            phone: '',
+                            summa: '',
+                            status: 'active'
+                        };
+                    },
+
+                    setActivePage(page) {
+                        this.currentPage = page;
+                        this.activeAccordion = null;
+                        console.log('Sahifa o\'zgartirildi:', page);
+                    },
+
+                    getStatusClass(status) {
+                        const classes = {
+                            'active': 'status-badge status-active',
+                            'yuborilmogda': 'status-badge status-yuborilmogda',
+                            'tasdiqlanmogda': 'status-badge status-tasdiqlanmogda',
+                            'qaytarildi': 'status-badge status-qaytarildi',
+                            'tugallandi': 'status-badge status-tugallandi'
+                        };
+                        return classes[status] || 'status-badge status-active';
+                    },
+
+                    getStatusText(status) {
+                        const texts = {
+                            'active': 'Faol',
+                            'yuborilmogda': 'Yuborilmogda',
+                            'tasdiqlanmogda': 'Tasdiqlanmogda',
+                            'qaytarildi': 'Qaytarildi',
+                            'tugallandi': 'Tugallandi'
+                        };
+                        return texts[status] || 'Faol';
+                    },
+
+                    getStatusCount(status) {
+                        return this.requests.filter(request => request.status === status).length;
+                    },
+
+                    formatDate(dateString) {
+                        if (!dateString) return 'Noma\'lum';
+                        const date = new Date(dateString);
+                        return date.toLocaleString('uz-UZ', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    },
+
+                    formatNumber(number) {
+                        return new Intl.NumberFormat('uz-UZ').format(number);
+                    },
+
+                    toggleSidebar() {
+                        this.sidebarOpen = !this.sidebarOpen;
+                        console.log('Sidebar toggled:', this.sidebarOpen);
+                    },
+
+                    closeSidebar() {
+                        this.sidebarOpen = false;
+                        console.log('Sidebar closed');
+                    },
+
+                    toggleAccordion(index) {
+                        if (this.activeAccordion === index) {
+                            this.activeAccordion = null;
+                        } else {
+                            this.activeAccordion = index;
+                        }
+                        console.log('Accordion toggled:', index);
+                    }
+                }
+            }).mount('#app');
+        }
+    </script>
+</body>
+</html>
