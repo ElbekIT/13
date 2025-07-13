@@ -146,6 +146,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: bold;
+            color: #4285f4;
         }
 
         .divider {
@@ -207,6 +209,21 @@
             border: 1px solid #d1fae5;
         }
 
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .header {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -242,6 +259,13 @@
             justify-content: center;
             font-weight: 600;
             font-size: 0.8rem;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .nav-links {
@@ -835,6 +859,7 @@
                             >
                         </div>
                         <button type="submit" class="auth-btn" :disabled="isAuthenticating">
+                            <span v-if="isAuthenticating" class="loading-spinner"></span>
                             {{ isAuthenticating ? 'Kutilmoqda...' : (isLoginMode ? 'KIRISH' : 'RO\'YXATDAN O\'TISH') }}
                         </button>
                     </form>
@@ -854,7 +879,8 @@
                 <!-- Google Authentication -->
                 <div v-if="authMode === 'google'">
                     <button @click="loginWithGoogle" class="auth-btn google-btn" :disabled="isAuthenticating">
-                        <div class="google-icon">G</div>
+                        <span v-if="isAuthenticating" class="loading-spinner"></span>
+                        <div v-else class="google-icon">G</div>
                         {{ isAuthenticating ? 'Kutilmoqda...' : 'GOOGLE ORQALI KIRISH' }}
                     </button>
                     
@@ -876,11 +902,9 @@
                 <nav>
                     <ul class="nav-links">
                         <li class="user-info">
-                            <div class="user-avatar" v-if="currentUser.photoURL">
-                                <img :src="currentUser.photoURL" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%;">
-                            </div>
-                            <div class="user-avatar" v-else>
-                                {{ getUserInitials() }}
+                            <div class="user-avatar">
+                                <img v-if="currentUser.photoURL" :src="currentUser.photoURL" alt="Avatar">
+                                <span v-else>{{ getUserInitials() }}</span>
                             </div>
                             <span>Salom, {{ getUserDisplayName() }}!</span>
                         </li>
@@ -906,6 +930,7 @@
                         <p><strong>Email:</strong> {{ currentUser.email }}</p>
                         <p><strong>Kirish vaqti:</strong> {{ formatDate(currentUser.loginTime) }}</p>
                         <p><strong>Provider:</strong> {{ getAuthProvider() }}</p>
+                        <p><strong>UID:</strong> {{ currentUser.uid }}</p>
                     </div>
                     
                     <div class="sidebar-card">
@@ -925,7 +950,7 @@
                     
                     <div class="sidebar-card">
                         <h3>Firebase ma'lumotlari</h3>
-                        <p><strong>Holat:</strong> {{ firebaseReady ? 'Ulangan' : 'Ulanmagan' }}</p>
+                        <p><strong>Holat:</strong> {{ firebaseReady ? 'Ulangan ✅' : 'Ulanmagan ❌' }}</p>
                         <p><strong>Database:</strong> Realtime Database</p>
                         <p><strong>Authentication:</strong> Firebase Auth</p>
                         <p><strong>So'nggi yangilanish:</strong> {{ formatDate(new Date()) }}</p>
@@ -1018,6 +1043,7 @@
                                 </div>
                                 <div class="form-actions">
                                     <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                                        <span v-if="isSubmitting" class="loading-spinner"></span>
                                         {{ isSubmitting ? 'Saqlanmoqda...' : 'Saqlash' }}
                                     </button>
                                     <button type="button" class="btn btn-secondary" @click="resetForm" :disabled="isSubmitting">
@@ -1034,6 +1060,7 @@
 
                         <!-- Data Table -->
                         <div v-if="loading" class="loading">
+                            <div class="loading-spinner" style="margin: 0 auto;"></div>
                             Ma'lumotlar yuklanmoqda...
                         </div>
                         
@@ -1110,8 +1137,9 @@
     <!-- Vue.js -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
-    <!-- Firebase -->
+    <!-- Firebase v9 SDK -->
     <script type="module">
+        // Firebase v9 SDK imports
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getDatabase, ref, push, onValue, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
         import { 
@@ -1124,6 +1152,7 @@
             onAuthStateChanged
         } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         
+        // Firebase konfiguratsiyasi
         const firebaseConfig = {
             apiKey: "AIzaSyBv_jGPJeElF-EakNV7BY5hFANKdBkdAtA",
             authDomain: "vuejsdars.firebaseapp.com",
@@ -1135,584 +1164,575 @@
             measurementId: "G-8F902F5W6W"
         };
 
+        let app, database, auth, googleProvider;
+        let firebaseReady = false;
+
         try {
-            const app = initializeApp(firebaseConfig);
-            const database = getDatabase(app);
-            const auth = getAuth(app);
-            const googleProvider = new GoogleAuthProvider();
+            // Firebase'ni ishga tushirish
+            app = initializeApp(firebaseConfig);
+            database = getDatabase(app);
+            auth = getAuth(app);
+            googleProvider = new GoogleAuthProvider();
             
-            window.firebaseApp = app;
-            window.database = database;
-            window.auth = auth;
-            window.googleProvider = googleProvider;
-            window.dbRef = ref;
-            window.dbPush = push;
-            window.dbOnValue = onValue;
-            window.dbRemove = remove;
-            window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-            window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-            window.signInWithPopup = signInWithPopup;
-            window.signOut = signOut;
-            window.onAuthStateChanged = onAuthStateChanged;
-            window.firebaseReady = true;
+            // Google provider sozlamalari
+            googleProvider.addScope('email');
+            googleProvider.addScope('profile');
             
-            console.log('Firebase muvaffaqiyatli ulandi!');
-            initVueApp();
+            firebaseReady = true;
+            console.log('✅ Firebase muvaffaqiyatli ulandi!');
+            console.log('🔥 App:', app.name);
+            console.log('🗄️ Database:', database.app.name);
+            console.log('🔐 Auth:', auth.app.name);
             
         } catch (error) {
-            console.error('Firebase ulanishida xatolik:', error);
-            window.firebaseReady = false;
-            initVueApp();
+            console.error('❌ Firebase ulanishida xatolik:', error);
+            firebaseReady = false;
         }
 
-        function initVueApp() {
-            const { createApp } = Vue;
+        // Vue App
+        const { createApp } = Vue;
 
-            createApp({
-                data() {
-                    return {
-                        // Authentication holati
-                        isLoggedIn: false,
-                        isAuthenticating: false,
-                        currentUser: null,
-                        authMode: 'email', // 'email' or 'google'
-                        isLoginMode: true, // true for login, false for register
-                        authData: {
-                            email: '',
-                            password: ''
+        createApp({
+            data() {
+                return {
+                    // Authentication holati
+                    isLoggedIn: false,
+                    isAuthenticating: false,
+                    currentUser: null,
+                    authMode: 'email', // 'email' or 'google'
+                    isLoginMode: true, // true for login, false for register
+                    authData: {
+                        email: '',
+                        password: ''
+                    },
+                    authError: '',
+                    authSuccess: '',
+                    
+                    // Sahifa holati
+                    currentPage: 'home',
+                    showForm: false,
+                    sidebarOpen: false,
+                    activeAccordion: null,
+                    
+                    // Ma'lumotlar
+                    requests: [],
+                    filteredRequests: [],
+                    formData: {
+                        fio: '',
+                        phone: '',
+                        summa: '',
+                        status: 'active'
+                    },
+                    
+                    // Holatlar
+                    loading: true,
+                    isSubmitting: false,
+                    isDeleting: false,
+                    firebaseReady: firebaseReady,
+                    
+                    // Qidiruv
+                    searchQuery: '',
+                    statusFilter: '',
+                    
+                    // Help Items
+                    helpItems: [
+                        {
+                            title: "Tizimdan qanday foydalanish kerak?",
+                            content: `
+                                <p>Bu tizim orqali siz quyidagi ishlarni bajarishingiz mumkin:</p>
+                                <ul>
+                                    <li>Email/Password yoki Google orqali xavfsiz kirish</li>
+                                    <li>Ma'lumot qo'shish va boshqarish</li>
+                                    <li>Qidiruv va filtrlash</li>
+                                    <li>Status o'zgartirish</li>
+                                    <li>Ma'lumotlarni ko'rish va o'chirish</li>
+                                </ul>
+                            `
                         },
-                        authError: '',
-                        authSuccess: '',
-                        
-                        // Sahifa holati
-                        currentPage: 'home',
-                        showForm: false,
-                        sidebarOpen: false,
-                        activeAccordion: null,
-                        
-                        // Ma'lumotlar
-                        requests: [],
-                        filteredRequests: [],
-                        formData: {
-                            fio: '',
-                            phone: '',
-                            summa: '',
-                            status: 'active'
+                        {
+                            title: "Autentifikatsiya tizimi",
+                            content: `
+                                <h4>Tizimga kirish usullari:</h4>
+                                <ul>
+                                    <li><strong>Email/Password:</strong> Email va parol bilan ro'yxatdan o'ting yoki kiring</li>
+                                    <li><strong>Google OAuth:</strong> Google hisobingiz orqali bir bosishda xavfsiz kiring</li>
+                                    <li>Parol kamida 6 ta belgidan iborat bo'lishi kerak</li>
+                                    <li>Xavfsizlik uchun kuchli parol ishlating</li>
+                                    <li>Sessiya avtomatik saqlanadi</li>
+                                </ul>
+                            `
                         },
+                        {
+                            title: "Ma'lumot qo'shish",
+                            content: `
+                                <h4>Yangi ma'lumot qo'shish uchun:</h4>
+                                <ul>
+                                    <li>"MA'LUMOT QO'SHISH" tugmasini bosing</li>
+                                    <li>FIO, telefon, summa va statusni kiriting</li>
+                                    <li>"Saqlash" tugmasini bosing</li>
+                                    <li>Ma'lumot Firebase bazasiga real-time saqlanadi</li>
+                                    <li>Barcha maydonlar to'ldirilishi shart</li>
+                                </ul>
+                            `
+                        },
+                        {
+                            title: "Qidiruv va filtrlash",
+                            content: `
+                                <h4>Qidiruv imkoniyatlari:</h4>
+                                <ul>
+                                    <li>FIO bo'yicha real-time qidiruv</li>
+                                    <li>Status bo'yicha filtrlash</li>
+                                    <li>"TOZALASH" tugmasi barcha filtrlarni tozalaydi</li>
+                                    <li>Qidiruv natijalari soni ko'rsatiladi</li>
+                                    <li>Yozgan sayin natija yangilanadi</li>
+                                </ul>
+                            `
+                        },
+                        {
+                            title: "Status turlari va ma'nolari",
+                            content: `
+                                <h4>Mavjud statuslar:</h4>
+                                <ul>
+                                    <li><strong>Faol</strong> - faol holatdagi ma'lumotlar (yashil)</li>
+                                    <li><strong>Yuborilmogda</strong> - yuborilayotgan ma'lumotlar (sariq)</li>
+                                    <li><strong>Tasdiqlanmogda</strong> - tasdiqlash kutilayotgan ma'lumotlar (ko'k)</li>
+                                    <li><strong>Qaytarildi</strong> - qaytarilgan ma'lumotlar (qizil)</li>
+                                    <li><strong>Tugallandi</strong> - tugallangan ma'lumotlar (yashil)</li>
+                                </ul>
+                                <p>Har bir status o'z rangiga ega va jadvalda ko'rsatiladi.</p>
+                            `
+                        }
+                    ]
+                }
+            },
+            async mounted() {
+                console.log('🚀 Vue App ishga tushdi');
+                await this.initAuth();
+            },
+            methods: {
+                async initAuth() {
+                    if (!this.firebaseReady) {
+                        console.log('❌ Firebase tayyor emas');
+                        this.loading = false;
+                        return;
+                    }
+
+                    console.log('🔐 Auth tizimini ishga tushirish...');
+                    
+                    // Auth state listener
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            console.log('✅ FOYDALANUVCHI TIZIMGA KIRDI');
+                            console.log('👤 UID:', user.uid);
+                            console.log('📧 Email:', user.email);
+                            console.log('🏷️ Display Name:', user.displayName);
+                            console.log('🔗 Provider:', user.providerData[0]?.providerId);
+                            console.log('📸 Photo URL:', user.photoURL);
+                            
+                            this.currentUser = {
+                                uid: user.uid,
+                                email: user.email,
+                                displayName: user.displayName,
+                                photoURL: user.photoURL,
+                                provider: user.providerData[0]?.providerId,
+                                loginTime: new Date().toISOString(),
+                                emailVerified: user.emailVerified
+                            };
+                            
+                            this.isLoggedIn = true;
+                            this.loadData();
+                            this.clearAuthMessages();
+                        } else {
+                            console.log('❌ FOYDALANUVCHI TIZIMDAN CHIQDI');
+                            this.currentUser = null;
+                            this.isLoggedIn = false;
+                            this.requests = [];
+                            this.filteredRequests = [];
+                        }
+                        this.loading = false;
+                    });
+                },
+
+                setAuthMode(mode) {
+                    this.authMode = mode;
+                    this.clearAuthMessages();
+                    console.log('🔄 Auth mode o\'zgartirildi:', mode);
+                },
+
+                toggleLoginMode() {
+                    this.isLoginMode = !this.isLoginMode;
+                    this.clearAuthMessages();
+                    console.log('🔄 Login mode:', this.isLoginMode ? 'Login' : 'Register');
+                },
+
+                clearAuthMessages() {
+                    this.authError = '';
+                    this.authSuccess = '';
+                },
+
+                async registerWithEmail() {
+                    if (this.isAuthenticating) return;
+                    
+                    this.isAuthenticating = true;
+                    this.clearAuthMessages();
+                    
+                    console.log('📝 Ro\'yxatdan o\'tish boshlandi:', this.authData.email);
+                    
+                    try {
+                        const userCredential = await createUserWithEmailAndPassword(
+                            auth, 
+                            this.authData.email, 
+                            this.authData.password
+                        );
                         
-                        // Holatlar
-                        loading: true,
-                        isSubmitting: false,
-                        isDeleting: false,
-                        firebaseReady: window.firebaseReady || false,
+                        console.log('✅ Ro\'yxatdan o\'tish muvaffaqiyatli:', userCredential.user.email);
+                        this.authSuccess = 'Ro\'yxatdan o\'tish muvaffaqiyatli! Tizimga kirilmoqda...';
+                        this.authData.email = '';
+                        this.authData.password = '';
                         
-                        // Qidiruv
-                        searchQuery: '',
-                        statusFilter: '',
-                        
-                        // Help Items
-                        helpItems: [
-                            {
-                                title: "Tizimdan qanday foydalanish kerak?",
-                                content: `
-                                    <p>Bu tizim orqali siz quyidagi ishlarni bajarishingiz mumkin:</p>
-                                    <ul>
-                                        <li>Email/Password yoki Google orqali kirish</li>
-                                        <li>Ma'lumot qo'shish va boshqarish</li>
-                                        <li>Qidiruv va filtrlash</li>
-                                        <li>Status o'zgartirish</li>
-                                        <li>Ma'lumotlarni ko'rish va o'chirish</li>
-                                    </ul>
-                                `
-                            },
-                            {
-                                title: "Autentifikatsiya",
-                                content: `
-                                    <h4>Tizimga kirish usullari:</h4>
-                                    <ul>
-                                        <li><strong>Email/Password:</strong> Email va parol bilan ro'yxatdan o'ting yoki kiring</li>
-                                        <li><strong>Google:</strong> Google hisobingiz orqali bir bosishda kiring</li>
-                                        <li>Parol kamida 6 ta belgidan iborat bo'lishi kerak</li>
-                                        <li>Xavfsizlik uchun kuchli parol ishlating</li>
-                                    </ul>
-                                `
-                            },
-                            {
-                                title: "Ma'lumot qo'shish",
-                                content: `
-                                    <h4>Yangi ma'lumot qo'shish uchun:</h4>
-                                    <ul>
-                                        <li>"MA'LUMOT QO'SHISH" tugmasini bosing</li>
-                                        <li>FIO, telefon, summa va statusni kiriting</li>
-                                        <li>"Saqlash" tugmasini bosing</li>
-                                        <li>Ma'lumot Firebase bazasiga saqlanadi</li>
-                                    </ul>
-                                    <p><strong>Eslatma:</strong> Barcha maydonlar to'ldirilishi shart!</p>
-                                `
-                            },
-                            {
-                                title: "Qidiruv va filtrlash",
-                                content: `
-                                    <h4>Qidiruv imkoniyatlari:</h4>
-                                    <ul>
-                                        <li>FIO bo'yicha qidiruv uchun "FIO ni kiriting" maydoniga yozing</li>
-                                        <li>Status bo'yicha filtrlash uchun dropdown menyu ishlatiladi</li>
-                                        <li>"TOZALASH" tugmasi barcha filtrlarni tozalaydi</li>
-                                        <li>Real-time qidiruv - yozgan sayin natija ko'rsatiladi</li>
-                                    </ul>
-                                `
-                            },
-                            {
-                                title: "Status turlari",
-                                content: `
-                                    <h4>Mavjud statuslar:</h4>
-                                    <ul>
-                                        <li><strong>Faol</strong> - faol holatdagi ma'lumotlar</li>
-                                        <li><strong>Yuborilmogda</strong> - yuborilayotgan ma'lumotlar</li>
-                                        <li><strong>Tasdiqlanmogda</strong> - tasdiqlash kutilayotgan ma'lumotlar</li>
-                                        <li><strong>Qaytarildi</strong> - qaytarilgan ma'lumotlar</li>
-                                        <li><strong>Tugallandi</strong> - tugallangan ma'lumotlar</li>
-                                    </ul>
-                                    <p>Har bir status o'z rangiga ega va jadvalda ko'rsatiladi.</p>
-                                `
-                            }
-                        ]
+                    } catch (error) {
+                        console.error('❌ Ro\'yxatdan o\'tishda xatolik:', error);
+                        this.authError = this.getAuthErrorMessage(error.code);
+                    } finally {
+                        this.isAuthenticating = false;
                     }
                 },
-                mounted() {
-                    this.initAuth();
+
+                async loginWithEmail() {
+                    if (this.isAuthenticating) return;
+                    
+                    this.isAuthenticating = true;
+                    this.clearAuthMessages();
+                    
+                    console.log('🔑 Email bilan kirish boshlandi:', this.authData.email);
+                    
+                    try {
+                        const userCredential = await signInWithEmailAndPassword(
+                            auth, 
+                            this.authData.email, 
+                            this.authData.password
+                        );
+                        
+                        console.log('✅ Email bilan kirish muvaffaqiyatli:', userCredential.user.email);
+                        this.authData.email = '';
+                        this.authData.password = '';
+                        
+                    } catch (error) {
+                        console.error('❌ Email bilan kirishda xatolik:', error);
+                        this.authError = this.getAuthErrorMessage(error.code);
+                    } finally {
+                        this.isAuthenticating = false;
+                    }
                 },
-                methods: {
-                    initAuth() {
-                        if (!this.firebaseReady) {
-                            this.loading = false;
-                            return;
-                        }
 
-                        // Auth state listener
-                        window.onAuthStateChanged(window.auth, (user) => {
-                            if (user) {
-                                console.log('=== FOYDALANUVCHI TIZIMGA KIRDI ===');
-                                console.log('UID:', user.uid);
-                                console.log('Email:', user.email);
-                                console.log('Display Name:', user.displayName);
-                                console.log('Provider:', user.providerData[0]?.providerId);
-                                
-                                this.currentUser = {
-                                    uid: user.uid,
-                                    email: user.email,
-                                    displayName: user.displayName,
-                                    photoURL: user.photoURL,
-                                    provider: user.providerData[0]?.providerId,
-                                    loginTime: new Date().toISOString()
-                                };
-                                
-                                this.isLoggedIn = true;
-                                this.loadData();
-                                this.clearAuthMessages();
-                            } else {
-                                console.log('=== FOYDALANUVCHI TIZIMDAN CHIQDI ===');
-                                this.currentUser = null;
-                                this.isLoggedIn = false;
-                                this.requests = [];
-                                this.filteredRequests = [];
-                            }
-                            this.loading = false;
+                async loginWithGoogle() {
+                    if (this.isAuthenticating) return;
+                    
+                    this.isAuthenticating = true;
+                    this.clearAuthMessages();
+                    
+                    console.log('🔍 Google bilan kirish boshlandi...');
+                    
+                    try {
+                        const result = await signInWithPopup(auth, googleProvider);
+                        console.log('✅ Google bilan kirish muvaffaqiyatli:', result.user.email);
+                        console.log('👤 Google User Info:', {
+                            name: result.user.displayName,
+                            email: result.user.email,
+                            photo: result.user.photoURL
                         });
-                    },
-
-                    setAuthMode(mode) {
-                        this.authMode = mode;
-                        this.clearAuthMessages();
-                    },
-
-                    toggleLoginMode() {
-                        this.isLoginMode = !this.isLoginMode;
-                        this.clearAuthMessages();
-                    },
-
-                    clearAuthMessages() {
-                        this.authError = '';
-                        this.authSuccess = '';
-                    },
-
-                    async registerWithEmail() {
-                        if (this.isAuthenticating) return;
                         
-                        this.isAuthenticating = true;
-                        this.clearAuthMessages();
-                        
-                        try {
-                            const userCredential = await window.createUserWithEmailAndPassword(
-                                window.auth, 
-                                this.authData.email, 
-                                this.authData.password
-                            );
-                            
-                            console.log('Ro\'yxatdan o\'tish muvaffaqiyatli:', userCredential.user.email);
-                            this.authSuccess = 'Ro\'yxatdan o\'tish muvaffaqiyatli!';
-                            this.authData.email = '';
-                            this.authData.password = '';
-                            
-                        } catch (error) {
-                            console.error('Ro\'yxatdan o\'tishda xatolik:', error);
+                    } catch (error) {
+                        console.error('❌ Google bilan kirishda xatolik:', error);
+                        if (error.code !== 'auth/popup-closed-by-user') {
                             this.authError = this.getAuthErrorMessage(error.code);
-                        } finally {
-                            this.isAuthenticating = false;
                         }
-                    },
+                    } finally {
+                        this.isAuthenticating = false;
+                    }
+                },
 
-                    async loginWithEmail() {
-                        if (this.isAuthenticating) return;
-                        
-                        this.isAuthenticating = true;
-                        this.clearAuthMessages();
-                        
+                async logout() {
+                    if (confirm('Haqiqatan ham tizimdan chiqmoqchimisiz?')) {
                         try {
-                            const userCredential = await window.signInWithEmailAndPassword(
-                                window.auth, 
-                                this.authData.email, 
-                                this.authData.password
-                            );
+                            await signOut(auth);
+                            console.log('✅ Tizimdan chiqish muvaffaqiyatli');
                             
-                            console.log('Email bilan kirish muvaffaqiyatli:', userCredential.user.email);
-                            this.authData.email = '';
-                            this.authData.password = '';
-                            
-                        } catch (error) {
-                            console.error('Email bilan kirishda xatolik:', error);
-                            this.authError = this.getAuthErrorMessage(error.code);
-                        } finally {
-                            this.isAuthenticating = false;
-                        }
-                    },
-
-                    async loginWithGoogle() {
-                        if (this.isAuthenticating) return;
-                        
-                        this.isAuthenticating = true;
-                        this.clearAuthMessages();
-                        
-                        try {
-                            const result = await window.signInWithPopup(window.auth, window.googleProvider);
-                            console.log('Google bilan kirish muvaffaqiyatli:', result.user.email);
-                            
-                        } catch (error) {
-                            console.error('Google bilan kirishda xatolik:', error);
-                            this.authError = this.getAuthErrorMessage(error.code);
-                        } finally {
-                            this.isAuthenticating = false;
-                        }
-                    },
-
-                    async logout() {
-                        if (confirm('Haqiqatan ham tizimdan chiqmoqchimisiz?')) {
-                            try {
-                                await window.signOut(window.auth);
-                                console.log('Tizimdan chiqish muvaffaqiyatli');
-                                
-                                // Ma'lumotlarni tozalash
-                                this.currentPage = 'home';
-                                this.showForm = false;
-                                this.searchQuery = '';
-                                this.statusFilter = '';
-                                this.sidebarOpen = false;
-                                
-                            } catch (error) {
-                                console.error('Chiqishda xatolik:', error);
-                                alert('Chiqishda xatolik yuz berdi');
-                            }
-                        }
-                    },
-
-                    getAuthErrorMessage(errorCode) {
-                        const errorMessages = {
-                            'auth/user-not-found': 'Bunday foydalanuvchi topilmadi',
-                            'auth/wrong-password': 'Noto\'g\'ri parol',
-                            'auth/email-already-in-use': 'Bu email allaqachon ishlatilmoqda',
-                            'auth/weak-password': 'Parol juda zaif (kamida 6 ta belgi)',
-                            'auth/invalid-email': 'Noto\'g\'ri email format',
-                            'auth/too-many-requests': 'Juda ko\'p urinish. Keyinroq qayta urinib ko\'ring',
-                            'auth/popup-closed-by-user': 'Google kirish oynasi yopildi',
-                            'auth/cancelled-popup-request': 'Google kirish bekor qilindi'
-                        };
-                        return errorMessages[errorCode] || 'Noma\'lum xatolik yuz berdi';
-                    },
-
-                    getUserDisplayName() {
-                        if (!this.currentUser) return 'Foydalanuvchi';
-                        return this.currentUser.displayName || 
-                               this.currentUser.email?.split('@')[0] || 
-                               'Foydalanuvchi';
-                    },
-
-                    getUserInitials() {
-                        const name = this.getUserDisplayName();
-                        return name.charAt(0).toUpperCase();
-                    },
-
-                    getAuthProvider() {
-                        if (!this.currentUser) return 'Noma\'lum';
-                        const provider = this.currentUser.provider;
-                        if (provider === 'google.com') return 'Google';
-                        if (provider === 'password') return 'Email/Password';
-                        return provider || 'Email/Password';
-                    },
-
-                    loadData() {
-                        if (!this.firebaseReady) return;
-
-                        console.log('Ma\'lumotlarni Firebase\'dan yuklash...');
-                        
-                        try {
-                            const requestsRef = window.dbRef(window.database, 'requests');
-                            
-                            window.dbOnValue(requestsRef, (snapshot) => {
-                                const data = snapshot.val();
-                                console.log('Firebase\'dan kelgan ma\'lumot:', data);
-                                
-                                if (data && Object.keys(data).length > 0) {
-                                    this.requests = Object.keys(data).map(key => ({
-                                        id: key,
-                                        ...data[key]
-                                    }));
-                                    
-                                    console.log('=== FIREBASE\'DA MAVJUD MA\'LUMOTLAR ===');
-                                    this.requests.forEach((request, index) => {
-                                        console.log(`${index + 1}.`, {
-                                            status: request.status,
-                                            fio: request.fio,
-                                            phone: request.phone,
-                                            summa: request.summa
-                                        });
-                                    });
-                                    console.log(`Jami: ${this.requests.length} ta ma'lumot`);
-                                } else {
-                                    this.requests = [];
-                                    console.log('=== FIREBASE\'DA MA\'LUMOT YO\'Q ===');
-                                    console.log('Bazada ma\'lumot yo\'q');
-                                }
-                                
-                                this.performSearch();
-                                this.loading = false;
-                            }, (error) => {
-                                console.error('Firebase\'dan ma\'lumot olishda xatolik:', error);
-                                this.loading = false;
-                            });
-                        } catch (error) {
-                            console.error('loadData funksiyasida xatolik:', error);
-                            this.loading = false;
-                        }
-                    },
-
-                    performSearch() {
-                        let filtered = [...this.requests];
-                        
-                        if (this.searchQuery.trim()) {
-                            const query = this.searchQuery.toLowerCase().trim();
-                            filtered = filtered.filter(request => 
-                                request.fio.toLowerCase().includes(query)
-                            );
-                            console.log(`"${this.searchQuery}" bo'yicha qidiruv natijasi:`, filtered.length, 'ta');
-                        }
-                        
-                        if (this.statusFilter) {
-                            filtered = filtered.filter(request => 
-                                request.status === this.statusFilter
-                            );
-                            console.log(`"${this.statusFilter}" status bo'yicha filtrlash:`, filtered.length, 'ta');
-                        }
-                        
-                        this.filteredRequests = filtered;
-                        
-                        if (filtered.length > 0) {
-                            console.log('=== QIDIRUV NATIJALARI ===');
-                            filtered.forEach((request, index) => {
-                                console.log(`${index + 1}.`, {
-                                    status: request.status,
-                                    fio: request.fio,
-                                    phone: request.phone,
-                                    summa: request.summa
-                                });
-                            });
-                        } else if (this.searchQuery || this.statusFilter) {
-                            console.log('=== QIDIRUV BO\'YICHA NATIJA TOPILMADI ===');
-                        }
-                    },
-
-                    clearSearch() {
-                        this.searchQuery = '';
-                        this.statusFilter = '';
-                        this.performSearch();
-                        console.log('Qidiruv tozalandi');
-                    },
-
-                    async addData() {
-                        if (!this.firebaseReady || this.isSubmitting) return;
-                        
-                        this.isSubmitting = true;
-                        console.log('Yangi ma\'lumot qo\'shish boshlandi...');
-                        
-                        try {
-                            const requestsRef = window.dbRef(window.database, 'requests');
-                            const newRequest = {
-                                fio: this.formData.fio.trim(),
-                                phone: this.formData.phone.trim(),
-                                summa: parseInt(this.formData.summa),
-                                status: this.formData.status,
-                                createdBy: this.getUserDisplayName(),
-                                createdByEmail: this.currentUser.email,
-                                createdAt: new Date().toISOString()
-                            };
-
-                            console.log('Firebase\'ga yuboriladigan ma\'lumot:', newRequest);
-                            await window.dbPush(requestsRef, newRequest);
-                            
-                            console.log('=== YANGI MA\'LUMOT QO\'SHILDI ===');
-                            console.log({
-                                status: newRequest.status,
-                                fio: newRequest.fio,
-                                phone: newRequest.phone,
-                                summa: newRequest.summa
-                            });
-                            
-                            alert('Ma\'lumot muvaffaqiyatli saqlandi!');
-                            this.resetForm();
+                            // Ma'lumotlarni tozalash
+                            this.currentPage = 'home';
                             this.showForm = false;
+                            this.searchQuery = '';
+                            this.statusFilter = '';
+                            this.sidebarOpen = false;
                             
                         } catch (error) {
-                            console.error('Ma\'lumot saqlashda xatolik:', error);
-                            alert('Ma\'lumot saqlashda xatolik yuz berdi');
-                        } finally {
-                            this.isSubmitting = false;
+                            console.error('❌ Chiqishda xatolik:', error);
+                            alert('Chiqishda xatolik yuz berdi');
                         }
-                    },
+                    }
+                },
 
-                    async deleteData(id) {
-                        if (!this.firebaseReady || this.isDeleting) return;
+                getAuthErrorMessage(errorCode) {
+                    const errorMessages = {
+                        'auth/user-not-found': 'Bunday foydalanuvchi topilmadi',
+                        'auth/wrong-password': 'Noto\'g\'ri parol',
+                        'auth/email-already-in-use': 'Bu email allaqachon ishlatilmoqda',
+                        'auth/weak-password': 'Parol juda zaif (kamida 6 ta belgi)',
+                        'auth/invalid-email': 'Noto\'g\'ri email format',
+                        'auth/too-many-requests': 'Juda ko\'p urinish. Keyinroq qayta urinib ko\'ring',
+                        'auth/popup-closed-by-user': 'Google kirish oynasi yopildi',
+                        'auth/cancelled-popup-request': 'Google kirish bekor qilindi',
+                        'auth/network-request-failed': 'Internet aloqasi bilan muammo',
+                        'auth/invalid-credential': 'Noto\'g\'ri ma\'lumotlar'
+                    };
+                    return errorMessages[errorCode] || `Xatolik: ${errorCode}`;
+                },
+
+                getUserDisplayName() {
+                    if (!this.currentUser) return 'Foydalanuvchi';
+                    return this.currentUser.displayName || 
+                           this.currentUser.email?.split('@')[0] || 
+                           'Foydalanuvchi';
+                },
+
+                getUserInitials() {
+                    const name = this.getUserDisplayName();
+                    return name.charAt(0).toUpperCase();
+                },
+
+                getAuthProvider() {
+                    if (!this.currentUser) return 'Noma\'lum';
+                    const provider = this.currentUser.provider;
+                    if (provider === 'google.com') return 'Google';
+                    if (provider === 'password') return 'Email/Password';
+                    return provider || 'Email/Password';
+                },
+
+                loadData() {
+                    if (!this.firebaseReady) return;
+
+                    console.log('📊 Ma\'lumotlarni Firebase\'dan yuklash...');
+                    
+                    try {
+                        const requestsRef = ref(database, 'requests');
                         
-                        if (confirm('Bu ma\'lumotni o\'chirmoqchimisiz?')) {
-                            this.isDeleting = true;
+                        onValue(requestsRef, (snapshot) => {
+                            const data = snapshot.val();
                             
-                            try {
-                                const itemRef = window.dbRef(window.database, `requests/${id}`);
-                                await window.dbRemove(itemRef);
-                                console.log('Ma\'lumot o\'chirildi:', id);
-                                alert('Ma\'lumot o\'chirildi');
-                            } catch (error) {
-                                console.error('Ma\'lumot o\'chirishda xatolik:', error);
-                                alert('O\'chirishda xatolik yuz berdi');
-                            } finally {
-                                this.isDeleting = false;
+                            if (data && Object.keys(data).length > 0) {
+                                this.requests = Object.keys(data).map(key => ({
+                                    id: key,
+                                    ...data[key]
+                                }));
+                                
+                                console.log('✅ Firebase\'dan ma\'lumotlar yuklandi:', this.requests.length, 'ta');
+                            } else {
+                                this.requests = [];
+                                console.log('📭 Firebase\'da ma\'lumot yo\'q');
                             }
-                        }
-                    },
-
-                    async clearAllData() {
-                        if (confirm('Barcha ma\'lumotlarni o\'chirmoqchimisiz? Bu amalni bekor qilish mumkin emas!')) {
-                            try {
-                                const requestsRef = window.dbRef(window.database, 'requests');
-                                await window.dbRemove(requestsRef);
-                                console.log('Barcha ma\'lumotlar o\'chirildi');
-                                alert('Barcha ma\'lumotlar o\'chirildi');
-                            } catch (error) {
-                                console.error('Ma\'lumotlarni o\'chirishda xatolik:', error);
-                                alert('O\'chirishda xatolik yuz berdi');
-                            }
-                        }
-                    },
-
-                    viewDetails(request) {
-                        console.log('Ma\'lumot tafsilotlari:', request);
-                        alert(`Ma'lumot tafsilotlari:\n\nFIO: ${request.fio}\nTelefon: ${request.phone}\nSumma: ${this.formatNumber(request.summa)} so'm\nStatus: ${this.getStatusText(request.status)}\nQo'shgan: ${request.createdBy || 'Noma\'lum'}\nEmail: ${request.createdByEmail || 'Noma\'lum'}\nQo'shilgan: ${this.formatDate(request.createdAt)}`);
-                    },
-
-                    toggleForm() {
-                        if (!this.firebaseReady) return;
-                        this.showForm = !this.showForm;
-                        if (this.showForm) {
-                            this.resetForm();
-                        }
-                    },
-
-                    resetForm() {
-                        this.formData = {
-                            fio: '',
-                            phone: '',
-                            summa: '',
-                            status: 'active'
-                        };
-                    },
-
-                    setActivePage(page) {
-                        this.currentPage = page;
-                        this.activeAccordion = null;
-                        console.log('Sahifa o\'zgartirildi:', page);
-                    },
-
-                    getStatusClass(status) {
-                        const classes = {
-                            'active': 'status-badge status-active',
-                            'yuborilmogda': 'status-badge status-yuborilmogda',
-                            'tasdiqlanmogda': 'status-badge status-tasdiqlanmogda',
-                            'qaytarildi': 'status-badge status-qaytarildi',
-                            'tugallandi': 'status-badge status-tugallandi'
-                        };
-                        return classes[status] || 'status-badge status-active';
-                    },
-
-                    getStatusText(status) {
-                        const texts = {
-                            'active': 'Faol',
-                            'yuborilmogda': 'Yuborilmogda',
-                            'tasdiqlanmogda': 'Tasdiqlanmogda',
-                            'qaytarildi': 'Qaytarildi',
-                            'tugallandi': 'Tugallandi'
-                        };
-                        return texts[status] || 'Faol';
-                    },
-
-                    getStatusCount(status) {
-                        return this.requests.filter(request => request.status === status).length;
-                    },
-
-                    formatDate(dateString) {
-                        if (!dateString) return 'Noma\'lum';
-                        const date = new Date(dateString);
-                        return date.toLocaleString('uz-UZ', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            
+                            this.performSearch();
+                            this.loading = false;
+                        }, (error) => {
+                            console.error('❌ Firebase\'dan ma\'lumot olishda xatolik:', error);
+                            this.loading = false;
                         });
-                    },
+                    } catch (error) {
+                        console.error('❌ loadData funksiyasida xatolik:', error);
+                        this.loading = false;
+                    }
+                },
 
-                    formatNumber(number) {
-                        return new Intl.NumberFormat('uz-UZ').format(number);
-                    },
+                performSearch() {
+                    let filtered = [...this.requests];
+                    
+                    if (this.searchQuery.trim()) {
+                        const query = this.searchQuery.toLowerCase().trim();
+                        filtered = filtered.filter(request => 
+                            request.fio.toLowerCase().includes(query)
+                        );
+                    }
+                    
+                    if (this.statusFilter) {
+                        filtered = filtered.filter(request => 
+                            request.status === this.statusFilter
+                        );
+                    }
+                    
+                    this.filteredRequests = filtered;
+                },
 
-                    toggleSidebar() {
-                        this.sidebarOpen = !this.sidebarOpen;
-                        console.log('Sidebar toggled:', this.sidebarOpen);
-                    },
+                clearSearch() {
+                    this.searchQuery = '';
+                    this.statusFilter = '';
+                    this.performSearch();
+                },
 
-                    closeSidebar() {
-                        this.sidebarOpen = false;
-                        console.log('Sidebar closed');
-                    },
+                async addData() {
+                    if (!this.firebaseReady || this.isSubmitting) return;
+                    
+                    this.isSubmitting = true;
+                    console.log('➕ Yangi ma\'lumot qo\'shish boshlandi...');
+                    
+                    try {
+                        const requestsRef = ref(database, 'requests');
+                        const newRequest = {
+                            fio: this.formData.fio.trim(),
+                            phone: this.formData.phone.trim(),
+                            summa: parseInt(this.formData.summa),
+                            status: this.formData.status,
+                            createdBy: this.getUserDisplayName(),
+                            createdByEmail: this.currentUser.email,
+                            createdByUID: this.currentUser.uid,
+                            createdAt: new Date().toISOString()
+                        };
 
-                    toggleAccordion(index) {
-                        if (this.activeAccordion === index) {
-                            this.activeAccordion = null;
-                        } else {
-                            this.activeAccordion = index;
+                        await push(requestsRef, newRequest);
+                        
+                        console.log('✅ Yangi ma\'lumot qo\'shildi:', newRequest);
+                        alert('Ma\'lumot muvaffaqiyatli saqlandi!');
+                        this.resetForm();
+                        this.showForm = false;
+                        
+                    } catch (error) {
+                        console.error('❌ Ma\'lumot saqlashda xatolik:', error);
+                        alert('Ma\'lumot saqlashda xatolik yuz berdi');
+                    } finally {
+                        this.isSubmitting = false;
+                    }
+                },
+
+                async deleteData(id) {
+                    if (!this.firebaseReady || this.isDeleting) return;
+                    
+                    if (confirm('Bu ma\'lumotni o\'chirmoqchimisiz?')) {
+                        this.isDeleting = true;
+                        
+                        try {
+                            const itemRef = ref(database, `requests/${id}`);
+                            await remove(itemRef);
+                            console.log('🗑️ Ma\'lumot o\'chirildi:', id);
+                            alert('Ma\'lumot o\'chirildi');
+                        } catch (error) {
+                            console.error('❌ Ma\'lumot o\'chirishda xatolik:', error);
+                            alert('O\'chirishda xatolik yuz berdi');
+                        } finally {
+                            this.isDeleting = false;
                         }
-                        console.log('Accordion toggled:', index);
+                    }
+                },
+
+                async clearAllData() {
+                    if (confirm('Barcha ma\'lumotlarni o\'chirmoqchimisiz? Bu amalni bekor qilish mumkin emas!')) {
+                        try {
+                            const requestsRef = ref(database, 'requests');
+                            await remove(requestsRef);
+                            console.log('🧹 Barcha ma\'lumotlar o\'chirildi');
+                            alert('Barcha ma\'lumotlar o\'chirildi');
+                        } catch (error) {
+                            console.error('❌ Ma\'lumotlarni o\'chirishda xatolik:', error);
+                            alert('O\'chirishda xatolik yuz berdi');
+                        }
+                    }
+                },
+
+                viewDetails(request) {
+                    const details = `Ma'lumot tafsilotlari:
+
+FIO: ${request.fio}
+Telefon: ${request.phone}
+Summa: ${this.formatNumber(request.summa)} so'm
+Status: ${this.getStatusText(request.status)}
+
+Qo'shgan: ${request.createdBy || 'Noma\'lum'}
+Email: ${request.createdByEmail || 'Noma\'lum'}
+UID: ${request.createdByUID || 'Noma\'lum'}
+Qo'shilgan: ${this.formatDate(request.createdAt)}`;
+                    
+                    alert(details);
+                },
+
+                toggleForm() {
+                    if (!this.firebaseReady) return;
+                    this.showForm = !this.showForm;
+                    if (this.showForm) {
+                        this.resetForm();
+                    }
+                },
+
+                resetForm() {
+                    this.formData = {
+                        fio: '',
+                        phone: '',
+                        summa: '',
+                        status: 'active'
+                    };
+                },
+
+                setActivePage(page) {
+                    this.currentPage = page;
+                    this.activeAccordion = null;
+                },
+
+                getStatusClass(status) {
+                    const classes = {
+                        'active': 'status-badge status-active',
+                        'yuborilmogda':  'status-badge status-yuborilmogda',
+                        'tasdiqlanmogda': 'status-badge status-tasdiqlanmogda',
+                        'qaytarildi': 'status-badge status-qaytarildi',
+                        'tugallandi': 'status-badge status-tugallandi'
+                    };
+                    return classes[status] || 'status-badge status-active';
+                },
+
+                getStatusText(status) {
+                    const texts = {
+                        'active': 'Faol',
+                        'yuborilmogda': 'Yuborilmogda',
+                        'tasdiqlanmogda': 'Tasdiqlanmogda',
+                        'qaytarildi': 'Qaytarildi',
+                        'tugallandi': 'Tugallandi'
+                    };
+                    return texts[status] || 'Faol';
+                },
+
+                getStatusCount(status) {
+                    return this.requests.filter(request => request.status === status).length;
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return 'Noma\'lum';
+                    const date = new Date(dateString);
+                    return date.toLocaleString('uz-UZ', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                },
+
+                formatNumber(number) {
+                    return new Intl.NumberFormat('uz-UZ').format(number);
+                },
+
+                toggleSidebar() {
+                    this.sidebarOpen = !this.sidebarOpen;
+                },
+
+                closeSidebar() {
+                    this.sidebarOpen = false;
+                },
+
+                toggleAccordion(index) {
+                    if (this.activeAccordion === index) {
+                        this.activeAccordion = null;
+                    } else {
+                        this.activeAccordion = index;
                     }
                 }
-            }).mount('#app');
-        }
+            }
+        }).mount('#app');
     </script>
 </body>
 </html>
