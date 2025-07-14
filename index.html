@@ -834,6 +834,15 @@
 
                 <!-- Email/Password Form -->
                 <div v-if="authMode === 'email'">
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #bae6fd;">
+                        <p style="color: #0369a1; font-size: 0.9rem; margin: 0;">
+                            <strong>{{ isLoginMode ? 'Kirish' : 'Ro\'yxatdan o\'tish' }}</strong> rejimida ishlayapsiz
+                        </p>
+                        <p style="color: #0369a1; font-size: 0.8rem; margin: 0.5rem 0 0 0;">
+                            {{ isLoginMode ? 'Agar hisobingiz yo\'q bo\'lsa, pastda "Ro\'yxatdan o\'ting" tugmasini bosing' : 'Agar hisobingiz bor bo\'lsa, pastda "Kirish" tugmasini bosing' }}
+                        </p>
+                    </div>
+                    
                     <form @submit.prevent="isLoginMode ? loginWithEmail() : registerWithEmail()" class="auth-form">
                         <div class="form-group">
                             <label for="email">Email:</label>
@@ -853,7 +862,7 @@
                                 id="password" 
                                 v-model="authData.password" 
                                 required
-                                placeholder="Parolingizni kiriting"
+                                placeholder="Parolingizni kiriting (kamida 6 ta belgi)"
                                 :disabled="isAuthenticating"
                                 minlength="6"
                             >
@@ -867,11 +876,11 @@
                     <div class="auth-switch">
                         <span v-if="isLoginMode">
                             Hisobingiz yo'qmi? 
-                            <button @click="toggleLoginMode">Ro'yxatdan o'ting</button>
+                            <button @click="toggleLoginMode" style="color: #ef4444; font-weight: bold;">Ro'yxatdan o'ting</button>
                         </span>
                         <span v-else>
                             Hisobingiz bormi? 
-                            <button @click="toggleLoginMode">Kirish</button>
+                            <button @click="toggleLoginMode" style="color: #10b981; font-weight: bold;">Kirish</button>
                         </span>
                     </div>
                 </div>
@@ -1409,17 +1418,26 @@
                     try {
                         const userCredential = await signInWithEmailAndPassword(
                             auth, 
-                            this.authData.email, 
+                            this.authData.email.trim(), 
                             this.authData.password
                         );
                         
                         console.log('✅ Email bilan kirish muvaffaqiyatli:', userCredential.user.email);
+                        this.authSuccess = 'Muvaffaqiyatli kirildi!';
                         this.authData.email = '';
                         this.authData.password = '';
                         
                     } catch (error) {
                         console.error('❌ Email bilan kirishda xatolik:', error);
-                        this.authError = this.getAuthErrorMessage(error.code);
+                        console.error('Error code:', error.code);
+                        console.error('Error message:', error.message);
+                        
+                        // Agar user topilmasa, register qilishni taklif qilish
+                        if (error.code === 'auth/user-not-found') {
+                            this.authError = 'Bu email bilan hisob topilmadi. Avval ro\'yxatdan o\'ting yoki emailni tekshiring.';
+                        } else {
+                            this.authError = this.getAuthErrorMessage(error.code);
+                        }
                     } finally {
                         this.isAuthenticating = false;
                     }
@@ -1474,8 +1492,8 @@
 
                 getAuthErrorMessage(errorCode) {
                     const errorMessages = {
-                        'auth/user-not-found': 'Bunday foydalanuvchi topilmadi',
-                        'auth/wrong-password': 'Noto\'g\'ri parol',
+                        'auth/user-not-found': 'Bunday foydalanuvchi topilmadi. Avval ro\'yxatdan o\'ting',
+                        'auth/wrong-password': 'Noto\'g\'ri parol kiritildi',
                         'auth/email-already-in-use': 'Bu email allaqachon ishlatilmoqda',
                         'auth/weak-password': 'Parol juda zaif (kamida 6 ta belgi)',
                         'auth/invalid-email': 'Noto\'g\'ri email format',
@@ -1483,9 +1501,12 @@
                         'auth/popup-closed-by-user': 'Google kirish oynasi yopildi',
                         'auth/cancelled-popup-request': 'Google kirish bekor qilindi',
                         'auth/network-request-failed': 'Internet aloqasi bilan muammo',
-                        'auth/invalid-credential': 'Noto\'g\'ri ma\'lumotlar'
+                        'auth/invalid-credential': 'Email yoki parol noto\'g\'ri',
+                        'auth/user-disabled': 'Bu foydalanuvchi hisobi bloklangan',
+                        'auth/operation-not-allowed': 'Bu operatsiya ruxsat etilmagan',
+                        'auth/invalid-login-credentials': 'Kirish ma\'lumotlari noto\'g\'ri. Email va parolni tekshiring'
                     };
-                    return errorMessages[errorCode] || `Xatolik: ${errorCode}`;
+                    return errorMessages[errorCode] || `Xatolik: ${errorCode}. Email va parolni tekshiring yoki ro'yxatdan o'ting`;
                 },
 
                 getUserDisplayName() {
