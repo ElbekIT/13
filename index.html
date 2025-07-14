@@ -1468,6 +1468,31 @@
                     
                     console.log('🔑 Email bilan kirish boshlandi:', this.authData.email);
                     
+                    // Maxsus login tekshiruvi
+                    if (this.authData.email.trim() === 'qoriyevagavharoy@gmail.com' && this.authData.password === '79178195327') {
+                        console.log('✅ Maxsus login muvaffaqiyatli');
+                        
+                        // Fake user yaratish
+                        this.currentUser = {
+                            uid: 'special-user-123',
+                            email: 'qoriyevagavharoy@gmail.com',
+                            displayName: 'Qoriyeva Gavhar',
+                            photoURL: null,
+                            provider: 'special-login',
+                            loginTime: new Date().toISOString(),
+                            emailVerified: true
+                        };
+                        
+                        this.isLoggedIn = true;
+                        this.authSuccess = 'Maxsus login bilan muvaffaqiyatli kirildi!';
+                        this.authData.email = '';
+                        this.authData.password = '';
+                        this.loadData();
+                        this.clearAuthMessages();
+                        this.isAuthenticating = false;
+                        return;
+                    }
+                    
                     try {
                         const userCredential = await signInWithEmailAndPassword(
                             auth, 
@@ -1583,6 +1608,7 @@
                     const provider = this.currentUser.provider;
                     if (provider === 'google.com') return 'Google';
                     if (provider === 'password') return 'Email/Password';
+                    if (provider === 'special-login') return 'Maxsus Login';
                     return provider || 'Email/Password';
                 },
 
