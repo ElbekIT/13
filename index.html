@@ -709,6 +709,146 @@
             margin-bottom: 0;
         }
 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 2rem;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-actions {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .modal-btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #059669;
+        }
+
+        .modal-btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        /* Edit Form Styles */
+        .edit-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .edit-form-full {
+            grid-column: 1 / -1;
+        }
+
+        .edit-form-card {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .edit-form-card h3 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
         /* Accordion Styles for Help Page */
         .accordion-item {
             border: 1px solid #e5e7eb;
@@ -795,6 +935,23 @@
             .sliding-sidebar {
                 width: 320px;
                 right: -320px;
+            }
+
+            .edit-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 1rem;
+            }
+
+            .modal-header {
+                padding: 1.5rem;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
             }
         }
     </style>
@@ -967,6 +1124,78 @@
                 </div>
             </div>
 
+            <!-- Add Data Modal -->
+            <div class="modal-overlay" :class="{active: showAddModal}" @click="closeAddModal">
+                <div class="modal-content" @click.stop>
+                    <div class="modal-header">
+                        <h2 class="modal-title">Yangi ma'lumot qo'shish</h2>
+                        <button class="modal-close" @click="closeAddModal">&times;</button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <form @submit.prevent="addData">
+                            <div class="form-group">
+                                <label for="fio">F.I.O:</label>
+                                <input 
+                                    type="text" 
+                                    id="fio" 
+                                    v-model="formData.fio" 
+                                    required
+                                    placeholder="To'liq ismingizni kiriting"
+                                    :disabled="isSubmitting"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Telefon:</label>
+                                <input 
+                                    type="tel" 
+                                    id="phone" 
+                                    v-model="formData.phone" 
+                                    required
+                                    placeholder="+998 90 123 45 67"
+                                    :disabled="isSubmitting"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="summa">Summa:</label>
+                                <input 
+                                    type="number" 
+                                    id="summa" 
+                                    v-model="formData.summa" 
+                                    required
+                                    placeholder="Summani kiriting"
+                                    min="1"
+                                    :disabled="isSubmitting"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="status">Status:</label>
+                                <select id="status" v-model="formData.status" required :disabled="isSubmitting">
+                                    <option value="active">Faol</option>
+                                    <option value="yuborilmogda">Yuborilmogda</option>
+                                    <option value="tasdiqlanmogda">Tasdiqlanmogda</option>
+                                    <option value="qaytarildi">Qaytarildi</option>
+                                    <option value="tugallandi">Tugallandi</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="modal-btn modal-btn-primary" @click="addData" :disabled="isSubmitting">
+                            <span v-if="isSubmitting" class="loading-spinner"></span>
+                            {{ isSubmitting ? 'Saqlanmoqda...' : 'Saqlash' }}
+                        </button>
+                        <button class="modal-btn modal-btn-secondary" @click="resetForm" :disabled="isSubmitting">
+                            Tozalash
+                        </button>
+                        <button class="modal-btn modal-btn-secondary" @click="closeAddModal">
+                            Yopish
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="container">
                 <div class="main-card">
                     <!-- Bosh sahifa -->
@@ -977,8 +1206,8 @@
                         
                         <div class="page-title">
                             <h2>Bosh sahifa</h2>
-                            <button class="add-btn" @click="toggleForm" :disabled="!firebaseReady">
-                                {{ showForm ? 'FORMANI YOPISH' : "MA'LUMOT QO'SHISH" }}
+                            <button class="add-btn" @click="openAddModal" :disabled="!firebaseReady">
+                                ➕ MA'LUMOT QO'SHISH
                             </button>
                         </div>
 
@@ -1000,66 +1229,6 @@
                                 <option value="tugallandi">Tugallandi</option>
                             </select>
                             <button class="clear-btn" @click="clearSearch">TOZALASH</button>
-                        </div>
-
-                        <!-- Form -->
-                        <div v-if="showForm && firebaseReady" class="form-container">
-                            <h3 class="form-title">Yangi ma'lumot qo'shish</h3>
-                            <form @submit.prevent="addData">
-                                <div class="form-group">
-                                    <label for="fio">F.I.O:</label>
-                                    <input 
-                                        type="text" 
-                                        id="fio" 
-                                        v-model="formData.fio" 
-                                        required
-                                        placeholder="To'liq ismingizni kiriting"
-                                        :disabled="isSubmitting"
-                                    >
-                                </div>
-                                <div class="form-group">
-                                    <label for="phone">Telefon:</label>
-                                    <input 
-                                        type="tel" 
-                                        id="phone" 
-                                        v-model="formData.phone" 
-                                        required
-                                        placeholder="+998 90 123 45 67"
-                                        :disabled="isSubmitting"
-                                    >
-                                </div>
-                                <div class="form-group">
-                                    <label for="summa">Summa:</label>
-                                    <input 
-                                        type="number" 
-                                        id="summa" 
-                                        v-model="formData.summa" 
-                                        required
-                                        placeholder="Summani kiriting"
-                                        min="1"
-                                        :disabled="isSubmitting"
-                                    >
-                                </div>
-                                <div class="form-group">
-                                    <label for="status">Status:</label>
-                                    <select id="status" v-model="formData.status" required :disabled="isSubmitting">
-                                        <option value="active">Faol</option>
-                                        <option value="yuborilmogda">Yuborilmogda</option>
-                                        <option value="tasdiqlanmogda">Tasdiqlanmogda</option>
-                                        <option value="qaytarildi">Qaytarildi</option>
-                                        <option value="tugallandi">Tugallandi</option>
-                                    </select>
-                                </div>
-                                <div class="form-actions">
-                                    <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-                                        <span v-if="isSubmitting" class="loading-spinner"></span>
-                                        {{ isSubmitting ? 'Saqlanmoqda...' : 'Saqlash' }}
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" @click="resetForm" :disabled="isSubmitting">
-                                        Tozalash
-                                    </button>
-                                </div>
-                            </form>
                         </div>
 
                         <!-- Search Results Count -->
@@ -1148,47 +1317,87 @@
                             </button>
                         </div>
                         
-                        <div class="form-container">
-                            <div class="form-title">{{ selectedRequest.fio }} - Ma'lumotlari</div>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-                                <div class="sidebar-card" style="margin: 0;">
+                        <form @submit.prevent="updateData">
+                            <div class="edit-form-grid">
+                                <div class="edit-form-card">
                                     <h3>Asosiy ma'lumotlar</h3>
-                                    <p><strong>F.I.O:</strong> {{ selectedRequest.fio }}</p>
-                                    <p><strong>Telefon:</strong> {{ selectedRequest.phone }}</p>
-                                    <p><strong>Summa:</strong> {{ formatNumber(selectedRequest.summa) }} so'm</p>
-                                    <p><strong>Status:</strong> 
-                                        <span :class="getStatusClass(selectedRequest.status)" style="margin-left: 0.5rem;">
-                                            {{ getStatusText(selectedRequest.status) }}
-                                        </span>
-                                    </p>
+                                    <div class="form-group">
+                                        <label for="edit-fio">F.I.O:</label>
+                                        <input 
+                                            type="text" 
+                                            id="edit-fio" 
+                                            v-model="editData.fio" 
+                                            required
+                                            :disabled="isUpdating"
+                                        >
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="edit-phone">Telefon:</label>
+                                        <input 
+                                            type="tel" 
+                                            id="edit-phone" 
+                                            v-model="editData.phone" 
+                                            required
+                                            :disabled="isUpdating"
+                                        >
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="edit-summa">Summa:</label>
+                                        <input 
+                                            type="number" 
+                                            id="edit-summa" 
+                                            v-model="editData.summa" 
+                                            required
+                                            min="1"
+                                            :disabled="isUpdating"
+                                        >
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="edit-status">Status:</label>
+                                        <select id="edit-status" v-model="editData.status" required :disabled="isUpdating">
+                                            <option value="active">Faol</option>
+                                            <option value="yuborilmogda">Yuborilmogda</option>
+                                            <option value="tasdiqlanmogda">Tasdiqlanmogda</option>
+                                            <option value="qaytarildi">Qaytarildi</option>
+                                            <option value="tugallandi">Tugallandi</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 
-                                <div class="sidebar-card" style="margin: 0;">
+                                <div class="edit-form-card">
                                     <h3>Qo'shimcha ma'lumotlar</h3>
                                     <p><strong>Qo'shgan:</strong> {{ selectedRequest.createdBy || 'Noma\'lum' }}</p>
                                     <p><strong>Email:</strong> {{ selectedRequest.createdByEmail || 'Noma\'lum' }}</p>
                                     <p><strong>UID:</strong> {{ selectedRequest.createdByUID || 'Noma\'lum' }}</p>
                                     <p><strong>Qo'shilgan vaqt:</strong> {{ formatDate(selectedRequest.createdAt) }}</p>
+                                    <p><strong>ID:</strong> {{ selectedRequest.id }}</p>
+                                    <p v-if="selectedRequest.updatedAt"><strong>Oxirgi o'zgarish:</strong> {{ formatDate(selectedRequest.updatedAt) }}</p>
                                 </div>
                             </div>
                             
-                            <div class="sidebar-card" style="margin: 0;">
+                            <div class="edit-form-card edit-form-full">
                                 <h3>Amallar</h3>
-                                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                                    <button class="btn btn-primary" @click="setActivePage('home')">
-                                        Bosh sahifaga qaytish
+                                <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                                    <button type="submit" class="btn btn-primary" :disabled="isUpdating">
+                                        <span v-if="isUpdating" class="loading-spinner"></span>
+                                        {{ isUpdating ? 'Saqlanmoqda...' : 'O\'zgarishlarni saqlash' }}
                                     </button>
-                                    <button class="btn" style="background: #ef4444; color: white;" @click="deleteDataFromDetails(selectedRequest.id)" :disabled="isDeleting">
+                                    <button type="button" class="btn btn-secondary" @click="resetEditForm" :disabled="isUpdating">
+                                        Bekor qilish
+                                    </button>
+                                    <button type="button" class="btn" style="background: #ef4444; color: white;" @click="deleteDataFromDetails(selectedRequest.id)" :disabled="isDeleting">
                                         <span v-if="isDeleting" class="loading-spinner"></span>
                                         {{ isDeleting ? 'O\'chirilmoqda...' : 'Ma\'lumotni o\'chirish' }}
                                     </button>
-                                    <button class="btn btn-secondary" @click="printDetails()">
-                                        Chop etish
+                                    <button type="button" class="btn btn-secondary" @click="printDetails()">
+                                        📄 Chop etish
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" @click="setActivePage('home')">
+                                        🏠 Bosh sahifaga qaytish
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1202,7 +1411,7 @@
     <script type="module">
         // Firebase v9 SDK imports
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, push, onValue, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getDatabase, ref, push, onValue, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
         import { 
             getAuth, 
             createUserWithEmailAndPassword, 
@@ -1272,7 +1481,7 @@
                     // Sahifa holati
                     currentPage: 'home',
                     selectedRequest: null, // Tanlangan ma'lumot uchun
-                    showForm: false,
+                    showAddModal: false, // Add modal holati
                     sidebarOpen: false,
                     activeAccordion: null,
                     
@@ -1285,10 +1494,17 @@
                         summa: '',
                         status: 'active'
                     },
+                    editData: {
+                        fio: '',
+                        phone: '',
+                        summa: '',
+                        status: 'active'
+                    },
                     
                     // Holatlar
                     loading: true,
                     isSubmitting: false,
+                    isUpdating: false,
                     isDeleting: false,
                     firebaseReady: firebaseReady,
                     
@@ -1559,7 +1775,7 @@
                             
                             // Ma'lumotlarni tozalash
                             this.currentPage = 'home';
-                            this.showForm = false;
+                            this.showAddModal = false;
                             this.searchQuery = '';
                             this.statusFilter = '';
                             this.sidebarOpen = false;
@@ -1675,6 +1891,17 @@
                     this.performSearch();
                 },
 
+                // Modal functions
+                openAddModal() {
+                    this.showAddModal = true;
+                    this.resetForm();
+                },
+
+                closeAddModal() {
+                    this.showAddModal = false;
+                    this.resetForm();
+                },
+
                 async addData() {
                     if (!this.firebaseReady || this.isSubmitting) return;
                     
@@ -1699,13 +1926,46 @@
                         console.log('✅ Yangi ma\'lumot qo\'shildi:', newRequest);
                         alert('Ma\'lumot muvaffaqiyatli saqlandi!');
                         this.resetForm();
-                        this.showForm = false;
+                        this.closeAddModal();
                         
                     } catch (error) {
                         console.error('❌ Ma\'lumot saqlashda xatolik:', error);
                         alert('Ma\'lumot saqlashda xatolik yuz berdi');
                     } finally {
                         this.isSubmitting = false;
+                    }
+                },
+
+                async updateData() {
+                    if (!this.firebaseReady || this.isUpdating || !this.selectedRequest) return;
+                    
+                    this.isUpdating = true;
+                    console.log('🔄 Ma\'lumot yangilanmoqda...');
+                    
+                    try {
+                        const itemRef = ref(database, `requests/${this.selectedRequest.id}`);
+                        const updatedData = {
+                            fio: this.editData.fio.trim(),
+                            phone: this.editData.phone.trim(),
+                            summa: parseInt(this.editData.summa),
+                            status: this.editData.status,
+                            updatedAt: new Date().toISOString(),
+                            updatedBy: this.getUserDisplayName()
+                        };
+
+                        await update(itemRef, updatedData);
+                        
+                        console.log('✅ Ma\'lumot yangilandi:', updatedData);
+                        alert('Ma\'lumot muvaffaqiyatli yangilandi!');
+                        
+                        // Update local selectedRequest
+                        Object.assign(this.selectedRequest, updatedData);
+                        
+                    } catch (error) {
+                        console.error('❌ Ma\'lumot yangilashda xatolik:', error);
+                        alert('Ma\'lumot yangilashda xatolik yuz berdi');
+                    } finally {
+                        this.isUpdating = false;
                     }
                 },
 
@@ -1745,14 +2005,13 @@
 
                 viewDetails(request) {
                     this.setActivePage('details', request);
-                },
-
-                toggleForm() {
-                    if (!this.firebaseReady) return;
-                    this.showForm = !this.showForm;
-                    if (this.showForm) {
-                        this.resetForm();
-                    }
+                    // Copy data to edit form
+                    this.editData = {
+                        fio: request.fio,
+                        phone: request.phone,
+                        summa: request.summa,
+                        status: request.status
+                    };
                 },
 
                 resetForm() {
@@ -1762,8 +2021,17 @@
                         summa: '',
                         status: 'active'
                     };
-                    this.authData.login = '';
-                    this.authData.password = '';
+                },
+
+                resetEditForm() {
+                    if (this.selectedRequest) {
+                        this.editData = {
+                            fio: this.selectedRequest.fio,
+                            phone: this.selectedRequest.phone,
+                            summa: this.selectedRequest.summa,
+                            status: this.selectedRequest.status
+                        };
+                    }
                 },
 
                 setActivePage(page, data = null) {
@@ -1870,6 +2138,7 @@
                         Email: ${this.selectedRequest.createdByEmail || 'Noma\'lum'}
                         UID: ${this.selectedRequest.createdByUID || 'Noma\'lum'}
                         Qo'shilgan: ${this.formatDate(this.selectedRequest.createdAt)}
+                        ${this.selectedRequest.updatedAt ? `Oxirgi o'zgarish: ${this.formatDate(this.selectedRequest.updatedAt)}` : ''}
                         
                         Chop etilgan: ${this.formatDate(new Date().toISOString())}
                     `;
