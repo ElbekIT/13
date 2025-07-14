@@ -1494,7 +1494,11 @@
                     const errorMessages = {
                         'auth/user-not-found': 'Bunday foydalanuvchi topilmadi. Avval ro\'yxatdan o\'ting',
                         'auth/wrong-password': 'Noto\'g\'ri parol kiritildi',
-                        'auth/email-already-in-use': 'Bu email allaqachon ishlatilmoqda',
+                        'auth/email-already-in-use': (() => {
+                            // Automatically switch to login mode
+                            this.isLoginMode = true;
+                            return 'Bu email allaqachon ishlatilmoqda. Login rejimiga o\'tkazildi - endi "KIRISH" tugmasini bosing';
+                        })(),
                         'auth/weak-password': 'Parol juda zaif (kamida 6 ta belgi)',
                         'auth/invalid-email': 'Noto\'g\'ri email format',
                         'auth/too-many-requests': 'Juda ko\'p urinish. Keyinroq qayta urinib ko\'ring',
