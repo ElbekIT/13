@@ -627,7 +627,7 @@
         .sliding-sidebar {
             position: fixed;
             top: 0;
-right: -400px;
+            right: -400px;
             width: 400px;
             height: 100%;
             background: white;
@@ -1683,11 +1683,16 @@ right: -400px;
                             this.loadData();
                             this.clearAuthMessages();
                         } else {
-                            console.log('❌ FOYDALANUVCHI TIZIMDAN CHIQDI');
+                            console.log('❌ FOYDALANUVCHI TIZIMDAN CHIQDI - onAuthStateChanged triggered!');
                             this.currentUser = null;
                             this.isLoggedIn = false;
                             this.requests = [];
                             this.filteredRequests = [];
+                            // Auth formani tozalash va login rejimiga qaytarish
+                            this.authData.login = '';
+                            this.authData.password = '';
+                            this.isLoginMode = true; 
+                            this.clearAuthMessages();
                         }
                         this.loading = false;
                     });
@@ -1842,19 +1847,31 @@ right: -400px;
                 },
 
                 async logout() {
-                    // Confirm dialog olib tashlandi, to'g'ridan-to'g'ri chiqishga harakat qilamiz
                     try {
-                        await signOut(auth);
-                        console.log('✅ Tizimdan chiqish muvaffaqiyatli');
-                        this.showGeneralMessage('Tizimdan muvaffaqiyatli chiqdingiz!', 'success');
-                        
-                        // Ma'lumotlarni tozalash (onAuthStateChanged tomonidan ham bajariladi, lekin xavfsizlik uchun)
-                        this.currentPage = 'home';
-                        this.showAddModal = false;
-                        this.searchQuery = '';
-                        this.statusFilter = '';
-                        this.sidebarOpen = false;
-                        
+                        if (this.currentUser && this.currentUser.provider === 'special-login') {
+                            // Maxsus foydalanuvchi uchun chiqishni qo'lda boshqarish
+                            console.log('✅ Maxsus foydalanuvchi tizimdan chiqdi');
+                            this.isLoggedIn = false;
+                            this.currentUser = null;
+                            this.requests = [];
+                            this.filteredRequests = [];
+                            this.currentPage = 'home';
+                            this.showAddModal = false;
+                            this.searchQuery = '';
+                            this.statusFilter = '';
+                            this.sidebarOpen = false;
+                            this.authData.login = '';
+                            this.authData.password = '';
+                            this.isLoginMode = true;
+                            this.clearAuthMessages();
+                            this.showGeneralMessage('Maxsus foydalanuvchi tizimdan muvaffaqiyatli chiqdi!', 'success');
+                        } else {
+                            // Firebase Auth foydalanuvchilari uchun chiqish
+                            await signOut(auth);
+                            console.log('✅ Tizimdan chiqish muvaffaqiyatli');
+                            this.showGeneralMessage('Tizimdan muvaffaqiyatli chiqdingiz!', 'success');
+                            // onAuthStateChanged listeneri qolgan holatni boshqaradi
+                        }
                     } catch (error) {
                         console.error('❌ Chiqishda xatolik:', error);
                         this.showGeneralMessage('Chiqishda xatolik yuz berdi: ' + error.message, 'error');
@@ -2048,34 +2065,32 @@ right: -400px;
                 async deleteData(id) {
                     if (!this.firebaseReady || this.isDeleting) return;
                     
-                    if (confirm('Bu ma\'lumotni o\'chirmoqchimisiz?')) { // Hali ham confirm qoldirildi, chunki bu muhim amal
-                        this.isDeleting = true;
-                        
-                        try {
-                            const itemRef = ref(database, `requests/${id}`);
-                            await remove(itemRef);
-                            console.log('🗑️ Ma\'lumot o\'chirildi:', id);
-                            this.showGeneralMessage('Ma\'lumot muvaffaqiyatli o\'chirildi!', 'success');
-                        } catch (error) {
-                            console.error('❌ Ma\'lumot o\'chirishda xatolik:', error);
-                            this.showGeneralMessage('O\'chirishda xatolik yuz berdi: ' + error.message, 'error');
-                        } finally {
-                            this.isDeleting = false;
-                        }
+                    // Confirm dialog olib tashlandi, to'g'ridan-to'g'ri o'chirishga harakat qilamiz
+                    this.isDeleting = true;
+                    
+                    try {
+                        const itemRef = ref(database, `requests/${id}`);
+                        await remove(itemRef);
+                        console.log('🗑️ Ma\'lumot o\'chirildi:', id);
+                        this.showGeneralMessage('Ma\'lumot muvaffaqiyatli o\'chirildi!', 'success');
+                    } catch (error) {
+                        console.error('❌ Ma\'lumot o\'chirishda xatolik:', error);
+                        this.showGeneralMessage('O\'chirishda xatolik yuz berdi: ' + error.message, 'error');
+                    } finally {
+                        this.isDeleting = false;
                     }
                 },
 
                 async clearAllData() {
-                    if (confirm('Barcha ma\'lumotlarni o\'chirmoqchimisiz? Bu amalni bekor qilish mumkin emas!')) { // Hali ham confirm qoldirildi, chunki bu muhim amal
-                        try {
-                            const requestsRef = ref(database, 'requests');
-                            await remove(requestsRef);
-                            console.log('🧹 Barcha ma\'lumotlar o\'chirildi');
-                            this.showGeneralMessage('Barcha ma\'lumotlar muvaffaqiyatli o\'chirildi!', 'success');
-                        } catch (error) {
-                            console.error('❌ Ma\'lumotlarni o\'chirishda xatolik:', error);
-                            this.showGeneralMessage('Barcha ma\'lumotlarni o\'chirishda xatolik yuz berdi: ' + error.message, 'error');
-                        }
+                    // Confirm dialog olib tashlandi, to'g'ridan-to'g'ri tozalashga harakat qilamiz
+                    try {
+                        const requestsRef = ref(database, 'requests');
+                        await remove(requestsRef);
+                        console.log('🧹 Barcha ma\'lumotlar o\'chirildi');
+                        this.showGeneralMessage('Barcha ma\'lumotlar muvaffaqiyatli o\'chirildi!', 'success');
+                    } catch (error) {
+                        console.error('❌ Ma\'lumotlarni o\'chirishda xatolik:', error);
+                        this.showGeneralMessage('Barcha ma\'lumotlarni o\'chirishda xatolik yuz berdi: ' + error.message, 'error');
                     }
                 },
 
@@ -2177,21 +2192,20 @@ right: -400px;
                 async deleteDataFromDetails(id) {
                     if (!this.firebaseReady || this.isDeleting) return;
                     
-                    if (confirm('Bu ma\'lumotni o\'chirmoqchimisiz?')) {
-                        this.isDeleting = true;
-                        
-                        try {
-                            const itemRef = ref(database, `requests/${id}`);
-                            await remove(itemRef);
-                            console.log('🗑️ Ma\'lumot o\'chirildi:', id);
-                            this.showGeneralMessage('Ma\'lumot muvaffaqiyatli o\'chirildi!', 'success');
-                            this.setActivePage('home'); // Bosh sahifaga qaytish
-                        } catch (error) {
-                            console.error('❌ Ma\'lumot o\'chirishda xatolik:', error);
-                            this.showGeneralMessage('O\'chirishda xatolik yuz berdi: ' + error.message, 'error');
-                        } finally {
-                            this.isDeleting = false;
-                        }
+                    // Confirm dialog olib tashlandi, to'g'ridan-to'g'ri o'chirishga harakat qilamiz
+                    this.isDeleting = true;
+                    
+                    try {
+                        const itemRef = ref(database, `requests/${id}`);
+                        await remove(itemRef);
+                        console.log('🗑️ Ma\'lumot o\'chirildi:', id);
+                        this.showGeneralMessage('Ma\'lumot muvaffaqiyatli o\'chirildi!', 'success');
+                        this.setActivePage('home'); // Bosh sahifaga qaytish
+                    } catch (error) {
+                        console.error('❌ Ma\'lumot o\'chirishda xatolik:', error);
+                        this.showGeneralMessage('O\'chirishda xatolik yuz berdi: ' + error.message, 'error');
+                    } finally {
+                        this.isDeleting = false;
                     }
                 },
 
