@@ -1138,6 +1138,58 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Ma'lumot tafsilotlari sahifasi -->
+                    <div v-if="currentPage === 'details' && selectedRequest">
+                        <div class="page-title">
+                            <h2>Ma'lumot tafsilotlari</h2>
+                            <button class="add-btn" @click="setActivePage('home')" style="background: #6b7280;">
+                                ← ORQAGA QAYTISH
+                            </button>
+                        </div>
+                        
+                        <div class="form-container">
+                            <div class="form-title">{{ selectedRequest.fio }} - Ma'lumotlari</div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                                <div class="sidebar-card" style="margin: 0;">
+                                    <h3>Asosiy ma'lumotlar</h3>
+                                    <p><strong>F.I.O:</strong> {{ selectedRequest.fio }}</p>
+                                    <p><strong>Telefon:</strong> {{ selectedRequest.phone }}</p>
+                                    <p><strong>Summa:</strong> {{ formatNumber(selectedRequest.summa) }} so'm</p>
+                                    <p><strong>Status:</strong> 
+                                        <span :class="getStatusClass(selectedRequest.status)" style="margin-left: 0.5rem;">
+                                            {{ getStatusText(selectedRequest.status) }}
+                                        </span>
+                                    </p>
+                                </div>
+                                
+                                <div class="sidebar-card" style="margin: 0;">
+                                    <h3>Qo'shimcha ma'lumotlar</h3>
+                                    <p><strong>Qo'shgan:</strong> {{ selectedRequest.createdBy || 'Noma\'lum' }}</p>
+                                    <p><strong>Email:</strong> {{ selectedRequest.createdByEmail || 'Noma\'lum' }}</p>
+                                    <p><strong>UID:</strong> {{ selectedRequest.createdByUID || 'Noma\'lum' }}</p>
+                                    <p><strong>Qo'shilgan vaqt:</strong> {{ formatDate(selectedRequest.createdAt) }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="sidebar-card" style="margin: 0;">
+                                <h3>Amallar</h3>
+                                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                                    <button class="btn btn-primary" @click="setActivePage('home')">
+                                        Bosh sahifaga qaytish
+                                    </button>
+                                    <button class="btn" style="background: #ef4444; color: white;" @click="deleteDataFromDetails(selectedRequest.id)" :disabled="isDeleting">
+                                        <span v-if="isDeleting" class="loading-spinner"></span>
+                                        {{ isDeleting ? 'O\'chirilmoqda...' : 'Ma\'lumotni o\'chirish' }}
+                                    </button>
+                                    <button class="btn btn-secondary" @click="printDetails()">
+                                        Chop etish
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1219,6 +1271,7 @@
                     
                     // Sahifa holati
                     currentPage: 'home',
+                    selectedRequest: null, // Tanlangan ma'lumot uchun
                     showForm: false,
                     sidebarOpen: false,
                     activeAccordion: null,
@@ -1662,19 +1715,7 @@
                 },
 
                 viewDetails(request) {
-                    const details = `Ma'lumot tafsilotlari:
-
-FIO: ${request.fio}
-Telefon: ${request.phone}
-Summa: ${this.formatNumber(request.summa)} so'm
-Status: ${this.getStatusText(request.status)}
-
-Qo'shgan: ${request.createdBy || 'Noma\'lum'}
-Email: ${request.createdByEmail || 'Noma\'lum'}
-UID: ${request.createdByUID || 'Noma\'lum'}
-Qo'shilgan: ${this.formatDate(request.createdAt)}`;
-                    
-                    alert(details);
+                    this.setActivePage('details', request);
                 },
 
                 toggleForm() {
@@ -1694,8 +1735,9 @@ Qo'shilgan: ${this.formatDate(request.createdAt)}`;
                     };
                 },
 
-                setActivePage(page) {
+                setActivePage(page, data = null) {
                     this.currentPage = page;
+                    this.selectedRequest = data;
                     this.activeAccordion = null;
                 },
 
@@ -1755,7 +1797,70 @@ Qo'shilgan: ${this.formatDate(request.createdAt)}`;
                     } else {
                         this.activeAccordion = index;
                     }
-                }
+                },
+
+                async deleteDataFromDetails(id) {
+                    if (!this.firebaseReady || this.isDeleting) return;
+                    
+                    if (confirm('Bu ma\'lumotni o\'chirmoqchimisiz?')) {
+                        this.isDeleting = true;
+                        
+                        try {
+                            const itemRef = ref(database, `requests/${id}`);
+                            await remove(itemRef);
+                            console.log('🗑️ Ma\'lumot o\'chirildi:', id);
+                            alert('Ma\'lumot o\'chirildi');
+                            this.setActivePage('home'); // Bosh sahifaga qaytish
+                        } catch (error) {
+                            console.error('❌ Ma\'lumot o\'chirishda xatolik:', error);
+                            alert('O\'chirishda xatolik yuz berdi');
+                        } finally {
+                            this.isDeleting = false;
+                        }
+                    }
+                },
+
+                printDetails() {
+                    if (!this.selectedRequest) return;
+                    
+                    const printContent = `
+                        MA'LUMOT TAFSILOTLARI
+                        =====================
+                        
+                        F.I.O: ${this.selectedRequest.fio}
+                        Telefon: ${this.selectedRequest.phone}
+                        Summa: ${this.formatNumber(this.selectedRequest.summa)} so'm
+                        Status: ${this.getStatusText(this.selectedRequest.status)}
+                        
+                        QO'SHIMCHA MA'LUMOTLAR
+                        ======================
+                        
+                        Qo'shgan: ${this.selectedRequest.createdBy || 'Noma\'lum'}
+                        Email: ${this.selectedRequest.createdByEmail || 'Noma\'lum'}
+                        UID: ${this.selectedRequest.createdByUID || 'Noma\'lum'}
+                        Qo'shilgan: ${this.formatDate(this.selectedRequest.createdAt)}
+                        
+                        Chop etilgan: ${this.formatDate(new Date().toISOString())}
+                    `;
+                    
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(`
+                        <html>
+                            <head>
+                                <title>Ma'lumot tafsilotlari</title>
+                                <style>
+                                    body { font-family: Arial, sans-serif; padding: 20px; }
+                                    pre { white-space: pre-wrap; }
+                                </style>
+                            </head>
+                            <body>
+                                <pre>${printContent}</pre>
+                            </body>
+                        </html>
+                    `);
+                    printWindow.document.close();
+                    printWindow.print();
+                },
             }
         }).mount('#app');
     </script>
