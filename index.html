@@ -627,7 +627,7 @@
         .sliding-sidebar {
             position: fixed;
             top: 0;
-            right: -400px;
+right: -400px;
             width: 400px;
             height: 100%;
             background: white;
@@ -931,6 +931,46 @@
             margin-bottom: 0.3rem;
         }
 
+        /* General Notification Styles */
+        .general-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .general-notification.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .general-notification.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .general-notification.error {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .notification-icon {
+            font-size: 1.5rem;
+        }
+
         @media (max-width: 768px) {
             .sliding-sidebar {
                 width: 320px;
@@ -952,6 +992,13 @@
 
             .modal-body {
                 padding: 1.5rem;
+            }
+
+            .general-notification {
+                width: 90%;
+                text-align: center;
+                flex-direction: column;
+                padding: 1rem;
             }
         }
     </style>
@@ -1081,6 +1128,16 @@
                     </ul>
                 </nav>
             </header>
+
+            <!-- General Notification -->
+            <div 
+                v-if="generalMessage" 
+                class="general-notification" 
+                :class="{active: generalMessage, success: generalMessageType === 'success', error: generalMessageType === 'error'}"
+            >
+                <span class="notification-icon">{{ generalMessageType === 'success' ? '✅' : '❌' }}</span>
+                <span>{{ generalMessage }}</span>
+            </div>
 
             <!-- Sliding Sidebar -->
             <div class="sidebar-overlay" :class="{active: sidebarOpen}" @click="closeSidebar"></div>
@@ -1511,6 +1568,11 @@
                     // Qidiruv
                     searchQuery: '',
                     statusFilter: '',
+
+                    // General Notifications
+                    generalMessage: '',
+                    generalMessageType: '', // 'success' or 'error'
+                    messageTimeout: null,
                     
                     // Help Items
                     helpItems: [
@@ -1648,6 +1710,18 @@
                     this.authSuccess = '';
                 },
 
+                showGeneralMessage(message, type = 'success', duration = 3000) {
+                    this.generalMessage = message;
+                    this.generalMessageType = type;
+                    if (this.messageTimeout) {
+                        clearTimeout(this.messageTimeout);
+                    }
+                    this.messageTimeout = setTimeout(() => {
+                        this.generalMessage = '';
+                        this.generalMessageType = '';
+                    }, duration);
+                },
+
                 async registerWithEmail() {
                     if (this.isAuthenticating) return;
                     
@@ -1768,22 +1842,22 @@
                 },
 
                 async logout() {
-                    if (confirm('Haqiqatan ham tizimdan chiqmoqchimisiz?')) {
-                        try {
-                            await signOut(auth);
-                            console.log('✅ Tizimdan chiqish muvaffaqiyatli');
-                            
-                            // Ma'lumotlarni tozalash
-                            this.currentPage = 'home';
-                            this.showAddModal = false;
-                            this.searchQuery = '';
-                            this.statusFilter = '';
-                            this.sidebarOpen = false;
-                            
-                        } catch (error) {
-                            console.error('❌ Chiqishda xatolik:', error);
-                            alert('Chiqishda xatolik yuz berdi');
-                        }
+                    // Confirm dialog olib tashlandi, to'g'ridan-to'g'ri chiqishga harakat qilamiz
+                    try {
+                        await signOut(auth);
+                        console.log('✅ Tizimdan chiqish muvaffaqiyatli');
+                        this.showGeneralMessage('Tizimdan muvaffaqiyatli chiqdingiz!', 'success');
+                        
+                        // Ma'lumotlarni tozalash (onAuthStateChanged tomonidan ham bajariladi, lekin xavfsizlik uchun)
+                        this.currentPage = 'home';
+                        this.showAddModal = false;
+                        this.searchQuery = '';
+                        this.statusFilter = '';
+                        this.sidebarOpen = false;
+                        
+                    } catch (error) {
+                        console.error('❌ Chiqishda xatolik:', error);
+                        this.showGeneralMessage('Chiqishda xatolik yuz berdi: ' + error.message, 'error');
                     }
                 },
 
@@ -1859,10 +1933,12 @@
                         }, (error) => {
                             console.error('❌ Firebase\'dan ma\'lumot olishda xatolik:', error);
                             this.loading = false;
+                            this.showGeneralMessage('Ma\'lumotlarni yuklashda xatolik: ' + error.message, 'error');
                         });
                     } catch (error) {
                         console.error('❌ loadData funksiyasida xatolik:', error);
                         this.loading = false;
+                        this.showGeneralMessage('Ma\'lumotlarni yuklashda kutilmagan xatolik: ' + error.message, 'error');
                     }
                 },
 
@@ -1924,13 +2000,13 @@
                         await push(requestsRef, newRequest);
                         
                         console.log('✅ Yangi ma\'lumot qo\'shildi:', newRequest);
-                        alert('Ma\'lumot muvaffaqiyatli saqlandi!');
+                        this.showGeneralMessage('Ma\'lumot muvaffaqiyatli saqlandi!', 'success');
                         this.resetForm();
                         this.closeAddModal();
                         
                     } catch (error) {
                         console.error('❌ Ma\'lumot saqlashda xatolik:', error);
-                        alert('Ma\'lumot saqlashda xatolik yuz berdi');
+                        this.showGeneralMessage('Ma\'lumot saqlashda xatolik yuz berdi: ' + error.message, 'error');
                     } finally {
                         this.isSubmitting = false;
                     }
@@ -1956,14 +2032,14 @@
                         await update(itemRef, updatedData);
                         
                         console.log('✅ Ma\'lumot yangilandi:', updatedData);
-                        alert('Ma\'lumot muvaffaqiyatli yangilandi!');
+                        this.showGeneralMessage('Ma\'lumot muvaffaqiyatli yangilandi!', 'success');
                         
                         // Update local selectedRequest
                         Object.assign(this.selectedRequest, updatedData);
                         
                     } catch (error) {
                         console.error('❌ Ma\'lumot yangilashda xatolik:', error);
-                        alert('Ma\'lumot yangilashda xatolik yuz berdi');
+                        this.showGeneralMessage('Ma\'lumot yangilashda xatolik yuz berdi: ' + error.message, 'error');
                     } finally {
                         this.isUpdating = false;
                     }
@@ -1972,17 +2048,17 @@
                 async deleteData(id) {
                     if (!this.firebaseReady || this.isDeleting) return;
                     
-                    if (confirm('Bu ma\'lumotni o\'chirmoqchimisiz?')) {
+                    if (confirm('Bu ma\'lumotni o\'chirmoqchimisiz?')) { // Hali ham confirm qoldirildi, chunki bu muhim amal
                         this.isDeleting = true;
                         
                         try {
                             const itemRef = ref(database, `requests/${id}`);
                             await remove(itemRef);
                             console.log('🗑️ Ma\'lumot o\'chirildi:', id);
-                            alert('Ma\'lumot o\'chirildi');
+                            this.showGeneralMessage('Ma\'lumot muvaffaqiyatli o\'chirildi!', 'success');
                         } catch (error) {
                             console.error('❌ Ma\'lumot o\'chirishda xatolik:', error);
-                            alert('O\'chirishda xatolik yuz berdi');
+                            this.showGeneralMessage('O\'chirishda xatolik yuz berdi: ' + error.message, 'error');
                         } finally {
                             this.isDeleting = false;
                         }
@@ -1990,15 +2066,15 @@
                 },
 
                 async clearAllData() {
-                    if (confirm('Barcha ma\'lumotlarni o\'chirmoqchimisiz? Bu amalni bekor qilish mumkin emas!')) {
+                    if (confirm('Barcha ma\'lumotlarni o\'chirmoqchimisiz? Bu amalni bekor qilish mumkin emas!')) { // Hali ham confirm qoldirildi, chunki bu muhim amal
                         try {
                             const requestsRef = ref(database, 'requests');
                             await remove(requestsRef);
                             console.log('🧹 Barcha ma\'lumotlar o\'chirildi');
-                            alert('Barcha ma\'lumotlar o\'chirildi');
+                            this.showGeneralMessage('Barcha ma\'lumotlar muvaffaqiyatli o\'chirildi!', 'success');
                         } catch (error) {
                             console.error('❌ Ma\'lumotlarni o\'chirishda xatolik:', error);
-                            alert('O\'chirishda xatolik yuz berdi');
+                            this.showGeneralMessage('Barcha ma\'lumotlarni o\'chirishda xatolik yuz berdi: ' + error.message, 'error');
                         }
                     }
                 },
@@ -2108,11 +2184,11 @@
                             const itemRef = ref(database, `requests/${id}`);
                             await remove(itemRef);
                             console.log('🗑️ Ma\'lumot o\'chirildi:', id);
-                            alert('Ma\'lumot o\'chirildi');
+                            this.showGeneralMessage('Ma\'lumot muvaffaqiyatli o\'chirildi!', 'success');
                             this.setActivePage('home'); // Bosh sahifaga qaytish
                         } catch (error) {
                             console.error('❌ Ma\'lumot o\'chirishda xatolik:', error);
-                            alert('O\'chirishda xatolik yuz berdi');
+                            this.showGeneralMessage('O\'chirishda xatolik yuz berdi: ' + error.message, 'error');
                         } finally {
                             this.isDeleting = false;
                         }
