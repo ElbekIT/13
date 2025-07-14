@@ -845,13 +845,13 @@
                     
                     <form @submit.prevent="isLoginMode ? loginWithEmail() : registerWithEmail()" class="auth-form">
                         <div class="form-group">
-                            <label for="email">Email:</label>
+                            <label for="login">Login:</label>
                             <input 
-                                type="email" 
-                                id="email" 
-                                v-model="authData.email" 
+                                type="text" 
+                                id="login" 
+                                v-model="authData.login" 
                                 required
-                                placeholder="Email manzilingizni kiriting"
+                                placeholder="Login ismingizni kiriting"
                                 :disabled="isAuthenticating"
                             >
                         </div>
@@ -1263,7 +1263,7 @@
                     authMode: 'email', // 'email' or 'google'
                     isLoginMode: true, // true for login, false for register
                     authData: {
-                        email: '',
+                        login: '',
                         password: ''
                     },
                     authError: '',
@@ -1438,18 +1438,18 @@
                     this.isAuthenticating = true;
                     this.clearAuthMessages();
                     
-                    console.log('📝 Ro\'yxatdan o\'tish boshlandi:', this.authData.email);
+                    console.log('📝 Ro\'yxatdan o\'tish boshlandi:', this.authData.login);
                     
                     try {
                         const userCredential = await createUserWithEmailAndPassword(
                             auth, 
-                            this.authData.email, 
+                            `${this.authData.login}@system.local`,
                             this.authData.password
                         );
                         
                         console.log('✅ Ro\'yxatdan o\'tish muvaffaqiyatli:', userCredential.user.email);
                         this.authSuccess = 'Ro\'yxatdan o\'tish muvaffaqiyatli! Tizimga kirilmoqda...';
-                        this.authData.email = '';
+                        this.authData.login = '';
                         this.authData.password = '';
                         
                     } catch (error) {
@@ -1466,17 +1466,17 @@
                     this.isAuthenticating = true;
                     this.clearAuthMessages();
                     
-                    console.log('🔑 Email bilan kirish boshlandi:', this.authData.email);
+                    console.log('🔑 Email bilan kirish boshlandi:', this.authData.login);
                     
                     // Maxsus login tekshiruvi
-                    if (this.authData.email.trim() === 'qoriyevagavharoy@gmail.com' && this.authData.password === '79178195327') {
+                    if (this.authData.login.trim() === 'Elbek' && this.authData.password === '178195327') {
                         console.log('✅ Maxsus login muvaffaqiyatli');
                         
                         // Fake user yaratish
                         this.currentUser = {
                             uid: 'special-user-123',
-                            email: 'qoriyevagavharoy@gmail.com',
-                            displayName: 'Qoriyeva Gavhar',
+                            email: 'elbek@system.local',
+                            displayName: 'Elbek',
                             photoURL: null,
                             provider: 'special-login',
                             loginTime: new Date().toISOString(),
@@ -1485,7 +1485,7 @@
                         
                         this.isLoggedIn = true;
                         this.authSuccess = 'Maxsus login bilan muvaffaqiyatli kirildi!';
-                        this.authData.email = '';
+                        this.authData.login = '';
                         this.authData.password = '';
                         this.loadData();
                         this.clearAuthMessages();
@@ -1494,15 +1494,18 @@
                     }
                     
                     try {
+                        // Firebase login uchun email formatiga o'tkazish
+                        const emailFormat = this.authData.login.includes('@') ? this.authData.login : `${this.authData.login}@system.local`;
+
                         const userCredential = await signInWithEmailAndPassword(
                             auth, 
-                            this.authData.email.trim(), 
+                            emailFormat, 
                             this.authData.password
                         );
                         
                         console.log('✅ Email bilan kirish muvaffaqiyatli:', userCredential.user.email);
                         this.authSuccess = 'Muvaffaqiyatli kirildi!';
-                        this.authData.email = '';
+                        this.authData.login = '';
                         this.authData.password = '';
                         
                     } catch (error) {
@@ -1512,7 +1515,7 @@
                         
                         // Agar user topilmasa, register qilishni taklif qilish
                         if (error.code === 'auth/user-not-found') {
-                            this.authError = 'Bu email bilan hisob topilmadi. Avval ro\'yxatdan o\'ting yoki emailni tekshiring.';
+                            this.authError = 'Bu login bilan hisob topilmadi. Avval ro\'yxatdan o\'ting yoki loginni tekshiring.';
                         } else {
                             this.authError = this.getAuthErrorMessage(error.code);
                         }
@@ -1575,7 +1578,7 @@
                         'auth/email-already-in-use': (() => {
                             // Automatically switch to login mode
                             this.isLoginMode = true;
-                            return 'Bu email allaqachon ishlatilmoqda. Login rejimiga o\'tkazildi - endi "KIRISH" tugmasini bosing';
+                            return 'Bu login allaqachon ishlatilmoqda. Login rejimiga o\'tkazildi - endi "KIRISH" tugmasini bosing';
                         })(),
                         'auth/weak-password': 'Parol juda zaif (kamida 6 ta belgi)',
                         'auth/invalid-email': 'Noto\'g\'ri email format',
@@ -1583,12 +1586,12 @@
                         'auth/popup-closed-by-user': 'Google kirish oynasi yopildi',
                         'auth/cancelled-popup-request': 'Google kirish bekor qilindi',
                         'auth/network-request-failed': 'Internet aloqasi bilan muammo',
-                        'auth/invalid-credential': 'Email yoki parol noto\'g\'ri',
+                        'auth/invalid-credential': 'Login yoki parol noto\'g\'ri',
                         'auth/user-disabled': 'Bu foydalanuvchi hisobi bloklangan',
                         'auth/operation-not-allowed': 'Bu operatsiya ruxsat etilmagan',
-                        'auth/invalid-login-credentials': 'Kirish ma\'lumotlari noto\'g\'ri. Email va parolni tekshiring'
+                        'auth/invalid-login-credentials': 'Kirish ma\'lumotlari noto\'g\'ri. Login va parolni tekshiring'
                     };
-                    return errorMessages[errorCode] || `Xatolik: ${errorCode}. Email va parolni tekshiring yoki ro'yxatdan o'ting`;
+                    return errorMessages[errorCode] || `Xatolik: ${errorCode}. Login va parolni tekshiring yoki ro'yxatdan o'ting`;
                 },
 
                 getUserDisplayName() {
@@ -1759,6 +1762,8 @@
                         summa: '',
                         status: 'active'
                     };
+                    this.authData.login = '';
+                    this.authData.password = '';
                 },
 
                 setActivePage(page, data = null) {
