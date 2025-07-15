@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project - Yordam</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <h1>Project</h1>
+            <nav>
+                <ul class="nav-links">
+                    <li class="user-info">
+                        <div class="user-avatar">
+                            <img v-if="currentUser?.photoURL" :src="currentUser.photoURL" alt="Avatar">
+                            <span v-else>{{ getUserInitials() }}</span>
+                        </div>
+                        <span>Salom, {{ getUserDisplayName() }}!</span>
+                    </li>
+                    <li><a href="home.html">Bosh sahifa</a></li>
+                    <li><a href="yordam.html" class="active">Yordam</a></li>
+                    <li><a href="#" @click="toggleSidebar">Sidebar</a></li>
+                    <li><a href="#" @click="logout">Chiqish</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- Notification System -->
+        <div class="notification-container" v-if="notifications.length > 0">
+            <div 
+                v-for="notification in notifications" 
+                :key="notification.id"
+                class="notification-item"
+                :class="notification.type"
+            >
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <span class="notification-title">{{ notification.title }}</span>
+                        <span class="notification-time">{{ formatTime(notification.time) }}</span>
+                    </div>
+                    <div class="notification-message">{{ notification.message }}</div>
+                    <div v-if="notification.edited" class="notification-edited">
+                        tahrirlangan {{ formatTime(notification.editedTime) }}
+                    </div>
+                </div>
+                <button class="notification-close" @click="removeNotification(notification.id)">×</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="main-card">
+                <div class="page-title">
+                    <h2>Yordam</h2>
+                    <button class="add-btn" @click="addTestNotification" style="background: #3b82f6;">
+                        🔔 Test Bildirishnoma
+                    </button>
+                </div>
+                
+                <div class="accordion-item" v-for="(item, index) in helpItems" :key="index">
+                    <button 
+                        class="accordion-header" 
+                        :class="{active: activeAccordion === index}"
+                        @click="toggleAccordion(index)"
+                    >
+                        <h3 class="accordion-title">{{ item.title }}</h3>
+                        <span class="accordion-icon">▼</span>
+                    </button>
+                    <div class="accordion-content" :class="{active: activeAccordion === index}">
+                        <div class="accordion-body" v-html="item.content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script type="module" src="yordam.js"></script>
+</body>
+</html>

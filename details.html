@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project - Ma'lumot tafsilotlari</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <h1>Project</h1>
+            <nav>
+                <ul class="nav-links">
+                    <li class="user-info">
+                        <div class="user-avatar">
+                            <img v-if="currentUser?.photoURL" :src="currentUser.photoURL" alt="Avatar">
+                            <span v-else>{{ getUserInitials() }}</span>
+                        </div>
+                        <span>Salom, {{ getUserDisplayName() }}!</span>
+                    </li>
+                    <li><a href="home.html">Bosh sahifa</a></li>
+                    <li><a href="yordam.html">Yordam</a></li>
+                    <li><a href="#" @click="toggleSidebar">Sidebar</a></li>
+                    <li><a href="#" @click="logout">Chiqish</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <div class="container">
+            <div class="main-card">
+                <div class="page-title">
+                    <h2>Ma'lumot tafsilotlari</h2>
+                    <button class="add-btn" @click="goBack" style="background: #6b7280;">
+                        ← ORQAGA QAYTISH
+                    </button>
+                </div>
+                
+                <form @submit.prevent="updateData" v-if="selectedRequest">
+                    <div class="edit-form-grid">
+                        <div class="edit-form-card">
+                            <h3>Asosiy ma'lumotlar</h3>
+                            <div class="form-group">
+                                <label for="edit-fio">F.I.O:</label>
+                                <input 
+                                    type="text" 
+                                    id="edit-fio" 
+                                    v-model="editData.fio" 
+                                    required
+                                    :disabled="isUpdating"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-phone">Telefon:</label>
+                                <input 
+                                    type="tel" 
+                                    id="edit-phone" 
+                                    v-model="editData.phone" 
+                                    required
+                                    :disabled="isUpdating"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-summa">Summa:</label>
+                                <input 
+                                    type="number" 
+                                    id="edit-summa" 
+                                    v-model="editData.summa" 
+                                    required
+                                    min="1"
+                                    :disabled="isUpdating"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-status">Status:</label>
+                                <select id="edit-status" v-model="editData.status" required :disabled="isUpdating">
+                                    <option value="active">Faol</option>
+                                    <option value="yuborilmogda">Yuborilmogda</option>
+                                    <option value="tasdiqlanmogda">Tasdiqlanmogda</option>
+                                    <option value="qaytarildi">Qaytarildi</option>
+                                    <option value="tugallandi">Tugallandi</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="edit-form-card">
+                            <h3>Qo'shimcha ma'lumotlar</h3>
+                            <p><strong>Qo'shgan:</strong> {{ selectedRequest.createdBy || 'Noma\'lum' }}</p>
+                            <p><strong>Email:</strong> {{ selectedRequest.createdByEmail || 'Noma\'lum' }}</p>
+                            <p><strong>UID:</strong> {{ selectedRequest.createdByUID || 'Noma\'lum' }}</p>
+                            <p><strong>Qo'shilgan vaqt:</strong> {{ formatDate(selectedRequest.createdAt) }}</p>
+                            <p><strong>ID:</strong> {{ selectedRequest.id }}</p>
+                            <p v-if="selectedRequest.updatedAt"><strong>Oxirgi o'zgarish:</strong> {{ formatDate(selectedRequest.updatedAt) }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="edit-form-card edit-form-full">
+                        <h3>Amallar</h3>
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                            <button type="submit" class="btn btn-primary" :disabled="isUpdating">
+                                <span v-if="isUpdating" class="loading-spinner"></span>
+                                {{ isUpdating ? 'Saqlanmoqda...' : 'O\'zgarishlarni saqlash' }}
+                            </button>
+                            <button type="button" class="btn btn-secondary" @click="resetEditForm" :disabled="isUpdating">
+                                Bekor qilish
+                            </button>
+                            <button type="button" class="btn" style="background: #ef4444; color: white;" @click="deleteDataFromDetails(selectedRequest.id)" :disabled="isDeleting">
+                                <span v-if="isDeleting" class="loading-spinner"></span>
+                                {{ isDeleting ? 'O\'chirilmoqda...' : 'Ma\'lumotni o\'chirish' }}
+                            </button>
+                            <button type="button" class="btn btn-secondary" @click="printDetails()">
+                                📄 Chop etish
+                            </button>
+                            <button type="button" class="btn btn-secondary" @click="goBack">
+                                🏠 Bosh sahifaga qaytish
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <div v-else class="no-data">
+                    Ma'lumot topilmadi yoki yuklanmagan
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script type="module" src="details.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project - Bosh sahifa</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <h1>Project</h1>
+            <nav>
+                <ul class="nav-links">
+                    <li class="user-info">
+                        <div class="user-avatar">
+                            <img v-if="currentUser?.photoURL" :src="currentUser.photoURL" alt="Avatar">
+                            <span v-else>{{ getUserInitials() }}</span>
+                        </div>
+                        <span>Salom, {{ getUserDisplayName() }}!</span>
+                    </li>
+                    <li><a href="home.html" class="active">Bosh sahifa</a></li>
+                    <li><a href="yordam.html">Yordam</a></li>
+                    <li><a href="#" @click="toggleSidebar">Sidebar</a></li>
+                    <li><a href="#" @click="logout">Chiqish</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- Notification System -->
+        <div class="notification-container" v-if="notifications.length > 0">
+            <div 
+                v-for="notification in notifications" 
+                :key="notification.id"
+                class="notification-item"
+                :class="notification.type"
+            >
+                <div class="notification-content">
+                    <div class="notification-header">
+                        <span class="notification-title">{{ notification.title }}</span>
+                        <span class="notification-time">{{ formatTime(notification.time) }}</span>
+                    </div>
+                    <div class="notification-message">{{ notification.message }}</div>
+                    <div v-if="notification.edited" class="notification-edited">
+                        tahrirlangan {{ formatTime(notification.editedTime) }}
+                    </div>
+                </div>
+                <button class="notification-close" @click="removeNotification(notification.id)">×</button>
+            </div>
+        </div>
+
+        <!-- General Notification -->
+        <div 
+            v-if="generalMessage" 
+            class="general-notification" 
+            :class="{active: generalMessage, success: generalMessageType === 'success', error: generalMessageType === 'error'}"
+        >
+            <span class="notification-icon">{{ generalMessageType === 'success' ? '✅' : '❌' }}</span>
+            <span>{{ generalMessage }}</span>
+        </div>
+
+        <!-- Sliding Sidebar -->
+        <div class="sidebar-overlay" :class="{active: sidebarOpen}" @click="closeSidebar"></div>
+        <div class="sliding-sidebar" :class="{active: sidebarOpen}">
+            <div class="sidebar-header">
+                <h3>Sidebar</h3>
+                <button class="sidebar-close-btn" @click="closeSidebar">&times;</button>
+            </div>
+            <div class="sidebar-body">
+                <div class="sidebar-card">
+                    <h3>Foydalanuvchi ma'lumotlari</h3>
+                    <p><strong>Ism:</strong> {{ getUserDisplayName() }}</p>
+                    <p><strong>Email:</strong> {{ currentUser?.email }}</p>
+                    <p><strong>Kirish vaqti:</strong> {{ formatDate(currentUser?.loginTime) }}</p>
+                    <p><strong>Provider:</strong> {{ getAuthProvider() }}</p>
+                    <p><strong>UID:</strong> {{ currentUser?.uid }}</p>
+                </div>
+                
+                <div class="sidebar-card">
+                    <h3>Tizim statistikasi</h3>
+                    <p><strong>Jami ma'lumotlar:</strong> {{ requests.length }} ta</p>
+                    <p><strong>Faol ma'lumotlar:</strong> {{ getStatusCount('active') }} ta</p>
+                    <p><strong>Yuborilayotgan:</strong> {{ getStatusCount('yuborilmogda') }} ta</p>
+                    <p><strong>Tasdiqlashda:</strong> {{ getStatusCount('tasdiqlanmogda') }} ta</p>
+                </div>
+                
+                <div class="sidebar-card">
+                    <h3>Tezkor havolalar</h3>
+                    <p><a href="home.html" style="color: #10b981;">Bosh sahifaga o'tish</a></p>
+                    <p><a href="yordam.html" style="color: #10b981;">Yordamga o'tish</a></p>
+                    <p><a href="#" @click="clearAllData(); closeSidebar()" style="color: #ef4444;">Barcha ma'lumotlarni tozalash</a></p>
+                </div>
+                
+                <div class="sidebar-card">
+                    <h3>Firebase ma'lumotlari</h3>
+                    <p><strong>Holat:</strong> {{ firebaseReady ? 'Ulangan ✅' : 'Ulanmagan ❌' }}</p>
+                    <p><strong>Database:</strong> Realtime Database</p>
+                    <p><strong>Authentication:</strong> Firebase Auth</p>
+                    <p><strong>So'nggi yangilanish:</strong> {{ formatDate(new Date()) }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Data Modal -->
+        <div class="modal-overlay" :class="{active: showAddModal}" @click="closeAddModal">
+            <div class="modal-content" @click.stop>
+                <div class="modal-header">
+                    <h2 class="modal-title">Yangi ma'lumot qo'shish</h2>
+                    <button class="modal-close" @click="closeAddModal">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <form @submit.prevent="addData">
+                        <div class="form-group">
+                            <label for="fio">F.I.O:</label>
+                            <input 
+                                type="text" 
+                                id="fio" 
+                                v-model="formData.fio" 
+                                required
+                                placeholder="To'liq ismingizni kiriting"
+                                :disabled="isSubmitting"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Telefon:</label>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                v-model="formData.phone" 
+                                required
+                                placeholder="+998 90 123 45 67"
+                                :disabled="isSubmitting"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="summa">Summa:</label>
+                            <input 
+                                type="number" 
+                                id="summa" 
+                                v-model="formData.summa" 
+                                required
+                                placeholder="Summani kiriting"
+                                min="1"
+                                :disabled="isSubmitting"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status:</label>
+                            <select id="status" v-model="formData.status" required :disabled="isSubmitting">
+                                <option value="active">Faol</option>
+                                <option value="yuborilmogda">Yuborilmogda</option>
+                                <option value="tasdiqlanmogda">Tasdiqlanmogda</option>
+                                <option value="qaytarildi">Qaytarildi</option>
+                                <option value="tugallandi">Tugallandi</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-primary" @click="addData" :disabled="isSubmitting">
+                        <span v-if="isSubmitting" class="loading-spinner"></span>
+                        {{ isSubmitting ? 'Saqlanmoqda...' : 'Saqlash' }}
+                    </button>
+                    <button class="modal-btn modal-btn-secondary" @click="resetForm" :disabled="isSubmitting">
+                        Tozalash
+                    </button>
+                    <button class="modal-btn modal-btn-secondary" @click="closeAddModal">
+                        Yopish
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="main-card">
+                <div class="welcome-message">
+                    Xush kelibsiz, {{ getUserDisplayName() }}! Siz {{ formatDate(currentUser?.loginTime) }} da tizimga kirdingiz.
+                </div>
+                
+                <div class="page-title">
+                    <h2>Bosh sahifa</h2>
+                    <button class="add-btn" @click="openAddModal" :disabled="!firebaseReady">
+                        ➕ MA'LUMOT QO'SHISH
+                    </button>
+                </div>
+
+                <!-- Search Controls -->
+                <div class="search-controls">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        placeholder="FIO ni kiriting..."
+                        v-model="searchQuery"
+                        @input="performSearch"
+                    >
+                    <select class="status-select" v-model="statusFilter" @change="performSearch">
+                        <option value="">Barcha statuslar</option>
+                        <option value="active">Faol</option>
+                        <option value="yuborilmogda">Yuborilmogda</option>
+                        <option value="tasdiqlanmogda">Tasdiqlanmogda</option>
+                        <option value="qaytarildi">Qaytarildi</option>
+                        <option value="tugallandi">Tugallandi</option>
+                    </select>
+                    <button class="clear-btn" @click="clearSearch">TOZALASH</button>
+                </div>
+
+                <!-- Search Results Count -->
+                <div v-if="filteredRequests.length > 0 && (searchQuery || statusFilter)" class="search-results-count">
+                    {{ filteredRequests.length }} ta natija topildi
+                </div>
+
+                <!-- Data Table -->
+                <div v-if="loading" class="loading">
+                    <div class="loading-spinner" style="margin: 0 auto;"></div>
+                    Ma'lumotlar yuklanmoqda...
+                </div>
+                
+                <div v-else-if="!firebaseReady" class="no-data">
+                    Firebase bilan bog'lanish kutilmoqda...
+                </div>
+                
+                <div v-else-if="filteredRequests.length === 0" class="no-data">
+                    {{ searchQuery || statusFilter ? 'Qidiruv bo\'yicha natija topilmadi' : 'Bazada ma\'lumot yo\'q' }}
+                </div>
+                
+                <div v-else>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>FIO</th>
+                                <th>Tel</th>
+                                <th>Summa</th>
+                                <th>Status</th>
+                                <th>Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(request, index) in filteredRequests" :key="request.id">
+                                <td>{{ index + 1 }}</td>
+                                <td><strong>{{ request.fio }}</strong></td>
+                                <td>{{ request.phone }}</td>
+                                <td><strong>UZS {{ formatNumber(request.summa) }}</strong></td>
+                                <td>
+                                    <span :class="getStatusClass(request.status)">
+                                        {{ getStatusText(request.status) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="action-btn" @click="viewDetails(request)">
+                                        OCHISH
+                                    </button>
+                                    <button class="action-btn delete-btn" @click="deleteData(request.id)" :disabled="isDeleting">
+                                        O'CHIRISH
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script type="module" src="home.js"></script>
+</body>
+</html>
