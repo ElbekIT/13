@@ -53,9 +53,6 @@
             <div class="main-card">
                 <div class="page-title">
                     <h2>Yordam</h2>
-                    <button class="add-btn" @click="addTestNotification" style="background: #3b82f6;">
-                        🔔 Test Bildirishnoma
-                    </button>
                 </div>
                 
                 <div class="accordion-item" v-for="(item, index) in helpItems" :key="index">
@@ -77,11 +74,11 @@
 
     <!-- Vue.js 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script type="module">
+    <script>
         // Vue App
         const { createApp } = Vue
 
-        createApp({
+        const vueApp = createApp({
             data() {
                 return {
                     currentUser: null,
@@ -197,28 +194,6 @@
                     )
                 },
 
-                addTestNotification() {
-                    const messages = [
-                        "Bu test bildirishnomasi",
-                        "Bildirishnoma tizimi ishlayapti",
-                        "Jsdagi alert chiqapti",
-                        "uni saytda chiqadigan qilish kerak",
-                        "notification lar yogdu",
-                    ]
-
-                    const randomMessage = messages[Math.floor(Math.random() * messages.length)]
-                    const types = ["info", "alert"]
-                    const randomType = types[Math.floor(Math.random() * types.length)]
-
-                    this.addNotification(
-                        "Test bildirishnoma",
-                        randomMessage,
-                        randomType,
-                        Math.random() > 0.5, // randomly set edited
-                        Math.random() > 0.5 ? new Date(Date.now() - Math.random() * 60000) : null, // random edit time
-                    )
-                },
-
                 addNotification(title, message, type = "info", edited = false, editedTime = null) {
                     const notification = {
                         id: Date.now() + Math.random(),
@@ -286,7 +261,9 @@
                     }
                 },
             },
-        }).mount("#app")
+        })
+
+        vueApp.mount("#app")
     </script>
 </body>
 </html>
